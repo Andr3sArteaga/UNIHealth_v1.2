@@ -83,6 +83,7 @@ const Register: React.FC = () => {
 
   const handleSubmit = () => {
     console.log("Formulario completo:", form);
+    navigation.navigate("Tutorial");
     // TODO: aquí llamas a tu API Django y luego navegas donde quieras
     // navigation.navigate("Welcome");
   };
