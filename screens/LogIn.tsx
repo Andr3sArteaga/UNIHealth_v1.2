@@ -4,10 +4,15 @@ import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import api from "../api/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const LogIn: React.FC = () => {
     const navigation = useNavigation<any>();
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+    const [loading, setLoading] = React.useState(false);
 
     const handleGoBack = () => {
       navigation.navigate("Welcome");
@@ -16,6 +21,37 @@ const LogIn: React.FC = () => {
     const handleStartRegister = () => {
       navigation.navigate("Register");
     }
+
+    const handleLogin = async () => {
+      if (!email || !password) {
+        alert("Por favor ingresa correo y contraseña");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await api.post('/auth/login', {
+          email,
+          password
+        });
+        
+        const { access_token } = response.data;
+        await AsyncStorage.setItem('access_token', access_token);
+        
+        // Optional: Get user details to store locally if needed
+        // const userResponse = await api.get('/users/me'); 
+        
+        setLoading(false);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+      } catch (error) {
+        setLoading(false);
+        console.error(error);
+        alert("Error al iniciar sesión. Verifica tus credenciales.");
+      }
+    };
 
   return (
 
@@ -51,6 +87,8 @@ const LogIn: React.FC = () => {
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor={Theme.colors.textTertiary}
+            value={email}
+            onChangeText={setEmail}
           />
         </InputWrapper>
         <HelperText>
@@ -73,6 +111,8 @@ const LogIn: React.FC = () => {
             placeholder="Ingresa tu contraseña"
             secureTextEntry
             placeholderTextColor={Theme.colors.textTertiary}
+            value={password}
+            onChangeText={setPassword}
           />
         </InputWrapper>
       </FieldGroup>
@@ -81,8 +121,8 @@ const LogIn: React.FC = () => {
       <ForgotPasswordText>¿Olvidaste tu contraseña?</ForgotPasswordText>
 
       {/* Botón Iniciar sesión */}
-      <PrimaryButton>
-        <PrimaryButtonText>Iniciar Sesión</PrimaryButtonText>
+      <PrimaryButton onPress={handleLogin} disabled={loading}>
+        <PrimaryButtonText>{loading ? "Cargando..." : "Iniciar Sesión"}</PrimaryButtonText>
       </PrimaryButton>
 
       {/* Divider */}

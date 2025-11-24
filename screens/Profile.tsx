@@ -6,18 +6,49 @@ import { Ionicons } from "@expo/vector-icons";
 import { Switch } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
+import api from "../api/api";
+import { useFocusEffect } from "@react-navigation/native";
+
 const Profile: React.FC = () => {
   const navigation = useNavigation<any>();
 
-  // 🔹 Aquí luego conectas con el usuario real (contexto / API)
-  const user = {
-    initials: "MG",
-    name: "María García Rodríguez",
-    email: "maria.garcia@universidad.edu.ec",
-    insuranceProvider: "Ecuasanitas",
-    policyNumber: "ES-2025-123456",
-    validUntil: "12/2025",
+  const [user, setUser] = useState({
+    initials: "U",
+    name: "Cargando...",
+    email: "",
+    insuranceProvider: "No registrado",
+    policyNumber: "---",
+    validUntil: "---",
+  });
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/users/profile');
+      const profile = response.data.patientProfile;
+      const email = response.data.email;
+      
+      if (profile) {
+        setUser({
+          initials: `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`,
+          name: `${profile.firstName} ${profile.lastName}`,
+          email: email,
+          insuranceProvider: "Ecuasanitas", // Placeholder until backend supports it
+          policyNumber: "ES-2025-123456", // Placeholder
+          validUntil: "12/2025", // Placeholder
+        });
+      } else {
+         setUser(prev => ({ ...prev, email: email, name: email.split('@')[0] }));
+      }
+    } catch (error) {
+      console.log("Error fetching profile", error);
+    }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserProfile();
+    }, [])
+  );
 
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(true);

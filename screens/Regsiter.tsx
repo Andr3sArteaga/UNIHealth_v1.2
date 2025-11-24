@@ -4,6 +4,8 @@ import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import api from "../api/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import Step1PersonalData, {
   Step1PersonalDataForm,
@@ -38,6 +40,8 @@ const Register: React.FC = () => {
 
   const [form, setForm] = useState<RegisterForm>({
     // Step 1
+    email: "",
+    password: "",
     fullName: "",
     dni: "",
     birthDate: "",
@@ -81,11 +85,50 @@ const Register: React.FC = () => {
     else navigation.goBack();
   };
 
-  const handleSubmit = () => {
-    console.log("Formulario completo:", form);
-    navigation.navigate("Tutorial");
-    // TODO: aquí llamas a tu API Django y luego navegas donde quieras
-    // navigation.navigate("Welcome");
+  const handleSubmit = async () => {
+    try {
+      // 1. Register User
+      await api.post('/auth/register', {
+        email: form.email,
+        password: form.password,
+        name: form.fullName,
+      });
+
+      // 2. Login to get token
+      const loginResponse = await api.post('/auth/login', {
+        email: form.email,
+        password: form.password,
+      });
+      
+      const { access_token } = loginResponse.data;
+      await AsyncStorage.setItem('access_token', access_token);
+
+      // 3. Create Patient Profile
+      const names = form.fullName.split(' ');
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || names[0]; // Fallback if only one name
+
+      // Format DOB to ISO string if needed, assuming DD/MM/YYYY input
+      // Simple conversion, might need more robust parsing depending on input mask
+      const [day, month, year] = form.birthDate.split('/');
+      const dobISO = new Date(`${year}-${month}-${day}`).toISOString();
+
+      await api.post('/patients', {
+        firstName,
+        lastName,
+        email: form.email,
+        phone: form.phone,
+        dob: dobISO,
+        gender: form.biologicalSex || 'O',
+        // Add other fields if backend supports them or update backend DTO
+      });
+
+      console.log("Registro completo");
+      navigation.navigate("Tutorial");
+    } catch (error) {
+      console.error("Error en registro:", error);
+      alert("Hubo un error al registrar. Por favor intenta de nuevo.");
+    }
   };
 
   const renderStep = () => {

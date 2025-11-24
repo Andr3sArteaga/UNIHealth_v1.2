@@ -7,6 +7,8 @@ import { TouchableOpacity } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 
 export type Step1PersonalDataForm = {
+  email: string;
+  password: string;
   fullName: string;
   dni: string;
   birthDate: string;
@@ -26,6 +28,7 @@ const maritalOptions = [
   "Unión libre",
   "Divorciado/a",
   "Viudo/a",
+  "Separado/a",
 ];
 
 const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
@@ -38,6 +41,35 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           Completa tu información personal básica
         </SectionSubtitle>
       </SectionHeader>
+
+      {/* Correo Institucional */}
+      <FieldGroup>
+        <Label>
+          Correo Institucional <Required>*</Required>
+        </Label>
+        <Input
+          placeholder="tu.nombre@universidad.edu"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={data.email}
+          onChangeText={(text) => onChange({ email: text })}
+          placeholderTextColor={Theme.colors.textTertiary}
+        />
+      </FieldGroup>
+
+      {/* Contraseña */}
+      <FieldGroup>
+        <Label>
+          Contraseña <Required>*</Required>
+        </Label>
+        <Input
+          placeholder="Crea una contraseña segura"
+          secureTextEntry
+          value={data.password}
+          onChangeText={(text) => onChange({ password: text })}
+          placeholderTextColor={Theme.colors.textTertiary}
+        />
+      </FieldGroup>
 
       {/* Nombre completo */}
       <FieldGroup>

@@ -4,8 +4,35 @@ import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
+import api from "../api/api";
+import { useFocusEffect } from "@react-navigation/native";
+
 const Home: React.FC = () => {
     const navigation = useNavigation<any>();
+    const [userName, setUserName] = React.useState("Usuario");
+    const [initials, setInitials] = React.useState("U");
+
+    const fetchUserProfile = async () => {
+      try {
+        const response = await api.get('/users/profile');
+        const profile = response.data.patientProfile;
+        if (profile && profile.firstName) {
+          setUserName(`${profile.firstName} ${profile.lastName}`);
+          setInitials(`${profile.firstName[0]}${profile.lastName[0]}`);
+        } else if (response.data.email) {
+           setUserName(response.data.email.split('@')[0]);
+           setInitials(response.data.email[0].toUpperCase());
+        }
+      } catch (error) {
+        console.log("Error fetching profile", error);
+      }
+    };
+
+    useFocusEffect(
+      React.useCallback(() => {
+        fetchUserProfile();
+      }, [])
+    );
 
     const handleOpenAlert = () => {
       navigation.navigate("Alert");
@@ -23,11 +50,11 @@ const Home: React.FC = () => {
           <HeaderTopRow>
             <GreetingWrapper>
               <GreetingSmall>Hola,</GreetingSmall>
-              <GreetingName>María García</GreetingName>
+              <GreetingName>{userName}</GreetingName>
             </GreetingWrapper>
 
             <ProfileBubble>
-              <ProfileInitials>MG</ProfileInitials>
+              <ProfileInitials>{initials}</ProfileInitials>
             </ProfileBubble>
           </HeaderTopRow>
 
