@@ -87,8 +87,8 @@ const Profile: React.FC = () => {
             </AvatarEditBadge>
           </AvatarCircle>
 
-          <UserName>{user.name}</UserName>
-          <UserEmail>{user.email}</UserEmail>
+          <UserName testID="profile-name">{user.name}</UserName>
+          <UserEmail testID="profile-email">{user.email}</UserEmail>
         </AvatarContainer>
       </Header>
 

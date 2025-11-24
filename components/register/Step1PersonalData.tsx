@@ -48,6 +48,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           Correo Institucional <Required>*</Required>
         </Label>
         <Input
+          testID="register-email-input"
           placeholder="tu.nombre@universidad.edu"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -63,6 +64,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           Contraseña <Required>*</Required>
         </Label>
         <Input
+          testID="register-password-input"
           placeholder="Crea una contraseña segura"
           secureTextEntry
           value={data.password}
@@ -77,6 +79,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           Nombre completo <Required>*</Required>
         </Label>
         <Input
+          testID="register-name-input"
           placeholder="Ej: María García Rodríguez"
           value={data.fullName}
           onChangeText={(text) => onChange({ fullName: text })}

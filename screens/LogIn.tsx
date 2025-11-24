@@ -1,5 +1,6 @@
 // screens/LogIn.tsx
 import React from "react";
+import { ActivityIndicator } from "react-native";
 import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,7 +56,11 @@ const LogIn: React.FC = () => {
 
   return (
 
-    <Container contentContainerStyle={{ padding: Theme.spacing.space6 }}>
+    <Container testID="login-screen" contentContainerStyle={{ padding: Theme.spacing.space6 }}>
+      <HeaderImage
+        source={require("../assets/login-header.png")} // Asegúrate de tener esta imagen o usa un color
+        resizeMode="cover"
+      />
       {/* Header con botón de retroceso */}
       <HeaderContainer>
         <BackButton onPress={handleGoBack}>
@@ -108,6 +113,7 @@ const LogIn: React.FC = () => {
             />
           </IconBox>
           <Input
+            testID="password-input"
             placeholder="Ingresa tu contraseña"
             secureTextEntry
             placeholderTextColor={Theme.colors.textTertiary}
@@ -121,8 +127,8 @@ const LogIn: React.FC = () => {
       <ForgotPasswordText>¿Olvidaste tu contraseña?</ForgotPasswordText>
 
       {/* Botón Iniciar sesión */}
-      <PrimaryButton onPress={handleLogin} disabled={loading}>
-        <PrimaryButtonText>{loading ? "Cargando..." : "Iniciar Sesión"}</PrimaryButtonText>
+      <PrimaryButton testID="login-button" onPress={handleLogin} disabled={loading}>
+        <PrimaryButtonText>{loading ? <ActivityIndicator color={Theme.colors.white} /> : "Iniciar Sesión"}</PrimaryButtonText>
       </PrimaryButton>
 
       {/* Divider */}
@@ -147,6 +153,13 @@ export default LogIn;
 const Container = styled.ScrollView`
   flex: 1;
   background-color: ${Theme.colors.background};
+`;
+
+const HeaderImage = styled.Image`
+  width: 100%;
+  height: 200px;
+  position: absolute;
+  top: 0;
 `;
 
 const LogoContainer = styled.View`

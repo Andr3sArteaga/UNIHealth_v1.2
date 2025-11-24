@@ -192,7 +192,7 @@ const Register: React.FC = () => {
       {/* BOTÓN INFERIOR SOLO EN PASOS 1–4 */}
       {step < TOTAL_STEPS && (
         <BottomBar>
-          <PrimaryButton onPress={goNext}>
+          <PrimaryButton testID="next-button" onPress={goNext}>
             <PrimaryButtonText>Siguiente</PrimaryButtonText>
           </PrimaryButton>
         </BottomBar>
