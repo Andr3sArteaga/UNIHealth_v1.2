@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { Theme } from "./components/colors";
 
-import Welcome from "./screens/Welcome"; 
+import Welcome from "./screens/Welcome";
 import Register from "./screens/Regsiter";
 import LogIn from "./screens/LogIn";
 import Tutorial from "./screens/Tutorial";
@@ -17,10 +17,14 @@ import AlertSending from "./screens/AlertSending";
 import AlertState from "./screens/AlertState";
 import Profile from "./screens/Profile";
 import MedicalHistory from "./screens/MedicalHistory";
+import api from "./api/api";
+import Diary from "./screens/Diary";
+import Appointment from "./screens/Appointment";
 
-const CitasScreen = () => null; // Placeholder
-// const HistorialScreen = () => null; // Placeholder, revisar esto
-const DiarioScreen = () => null; // Placeholder
+import { AuthProvider, useAuth, NotificationProvider } from "./context";
+
+const DiarioScreen = () => <Diary />;
+const CitasScreen = () => <Appointment />;
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -34,6 +38,7 @@ export type RootStackParamList = {
   Profile: undefined;
   MedicalHistory: undefined;
 };
+
 export type MainTabsParamList = {
   Home: undefined;
   Citas: undefined;
@@ -41,7 +46,7 @@ export type MainTabsParamList = {
   Perfil: undefined;
 };
 
-const Stack= createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabsParamList>();
 
 const MainTabs: React.FC = () => {
@@ -53,8 +58,8 @@ const MainTabs: React.FC = () => {
         tabBarActiveTintColor: Theme.colors.primary,
         tabBarInactiveTintColor: Theme.colors.textSecondary,
         tabBarStyle: {
-          height: 72,          
-          paddingBottom: 16,  
+          height: 72,
+          paddingBottom: 16,
           paddingTop: 8,
           borderTopWidth: 1,
           borderTopColor: Theme.colors.border,
@@ -88,26 +93,47 @@ const MainTabs: React.FC = () => {
   );
 };
 
+const AppContent = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          // Auth Stack
+          <>
+            <Stack.Screen name="Welcome" component={Welcome} />
+            <Stack.Screen name="LogIn" component={LogIn} />
+            <Stack.Screen name="Register" component={Register} />
+            <Stack.Screen name="Tutorial" component={Tutorial} />
+          </>
+        ) : (
+          // App Stack
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="Alert" component={Alert} />
+            <Stack.Screen name="AlertSending" component={AlertSending} />
+            <Stack.Screen name="AlertState" component={AlertState} />
+            <Stack.Screen name="MedicalHistory" component={MedicalHistory} />
+            <Stack.Screen name="Profile" component={Profile} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
 export default function App() {
   return (
-    <>
-      <StatusBar style="dark" />
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Welcome"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen name="Welcome" component={Welcome} />
-          <Stack.Screen name="Register" component={Register} />
-          <Stack.Screen name="LogIn" component={LogIn} />
-          <Stack.Screen name="Tutorial" component={Tutorial} />
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="Alert" component={Alert} />
-          <Stack.Screen name="AlertSending" component={AlertSending} />
-          <Stack.Screen name="AlertState" component={AlertState} />
-          <Stack.Screen name="MedicalHistory" component={MedicalHistory} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </>
+    <AuthProvider>
+      <NotificationProvider>
+        <StatusBar style="dark" />
+        <AppContent />
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

@@ -16,6 +16,7 @@ export type Step3EmergencyContactForm = {
 type Props = {
   data: Step3EmergencyContactForm;
   onChange: (partial: Partial<Step3EmergencyContactForm>) => void;
+  errors?: Partial<Record<keyof Step3EmergencyContactForm, string>>;
 };
 
 const insuranceProviders = [
@@ -25,7 +26,7 @@ const insuranceProviders = [
   "Otro",
 ];
 
-const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
+const Step3EmergencyContact: React.FC<Props> = ({ data, onChange, errors }) => {
   const toggleInsurance = () => {
     onChange({
       hasInsurance: !data.hasInsurance,
@@ -55,6 +56,7 @@ const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ address: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.address && <ErrorText>{errors.address}</ErrorText>}
       </FieldGroup>
 
       {/* Teléfono */}
@@ -69,6 +71,7 @@ const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ phone: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.phone && <ErrorText>{errors.phone}</ErrorText>}
       </FieldGroup>
 
       {/* Contacto de emergencia */}
@@ -85,6 +88,7 @@ const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
             onChangeText={(text) => onChange({ emergencyName: text })}
             placeholderTextColor={Theme.colors.textTertiary}
           />
+          {errors?.emergencyName && <ErrorText>{errors.emergencyName}</ErrorText>}
         </InnerFieldGroup>
 
         <InnerFieldGroup>
@@ -98,6 +102,7 @@ const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
             onChangeText={(text) => onChange({ emergencyPhone: text })}
             placeholderTextColor={Theme.colors.textTertiary}
           />
+          {errors?.emergencyPhone && <ErrorText>{errors.emergencyPhone}</ErrorText>}
         </InnerFieldGroup>
       </EmergencyCard>
 
@@ -153,6 +158,7 @@ const Step3EmergencyContact: React.FC<Props> = ({ data, onChange }) => {
               ))}
             </Picker>
           </DropdownWrapper>
+          {errors?.insuranceProvider && <ErrorText>{errors.insuranceProvider}</ErrorText>}
         </FieldGroup>
       </InsuranceCard>
     </Container>
@@ -264,5 +270,11 @@ const DropdownWrapper = styled.View<{ $disabled: boolean }>`
     $disabled ? Theme.colors.border : Theme.colors.border};
   opacity: ${({ $disabled }) => ($disabled ? 0.6 : 1)};
   overflow: hidden;
+`;
+
+const ErrorText = styled.Text`
+  color: ${Theme.colors.primary};
+  margin-top: 6px;
+  font-size: ${Theme.typography.fontSizeXs}px;
 `;
  

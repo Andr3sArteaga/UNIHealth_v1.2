@@ -34,9 +34,14 @@ export type RegisterForm =
   Step3EmergencyContactForm &
   Step4PreferencesForm;
 
+export type RegisterErrors = Partial<Record<keyof RegisterForm, string>>;
+
 const Register: React.FC = () => {
   const navigation = useNavigation<any>();
   const [step, setStep] = useState<number>(1);
+
+  // Validation errors state
+  const [errors, setErrors] = useState<RegisterErrors>({});
 
   const [form, setForm] = useState<RegisterForm>({
     // Step 1
@@ -71,9 +76,82 @@ const Register: React.FC = () => {
 
   const updateForm = (partial: Partial<RegisterForm>) => {
     setForm((prev) => ({ ...prev, ...partial }));
+    // Clear errors for fields being updated
+    setErrors((prev) => {
+      const next = { ...prev } as RegisterErrors;
+      Object.keys(partial).forEach((key) => {
+        delete next[key as keyof RegisterForm];
+      });
+      return next;
+    });
   };
 
+  // Centralized validation for steps 1-4. Returns true if valid.
+  function validate(currentStep: number, currentForm: RegisterForm) {
+    const newErrors: Partial<Record<keyof RegisterForm, string>> = {};
+
+    if (currentStep === 1) {
+      if (!currentForm.fullName.trim()) {
+        newErrors.fullName = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.dni.trim()) {
+        newErrors.dni = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.birthDate.trim()) {
+        newErrors.birthDate = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.biologicalSex) {
+        newErrors.biologicalSex = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.maritalStatus.trim()) {
+        newErrors.maritalStatus = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.email.trim()) {
+        newErrors.email = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.password.trim()) {
+        newErrors.password = "Campo obligatorio. Por favor rellena esta información.";
+      }
+    } else if (currentStep === 2) {
+      // No mandatory fields marked in Step 2 in UI; keep for future
+    } else if (currentStep === 3) {
+      if (!currentForm.address.trim()) {
+        newErrors.address = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.phone.trim()) {
+        newErrors.phone = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.emergencyName.trim()) {
+        newErrors.emergencyName = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.emergencyPhone.trim()) {
+        newErrors.emergencyPhone = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (currentForm.hasInsurance && !currentForm.insuranceProvider.trim()) {
+        newErrors.insuranceProvider = "Campo obligatorio. Por favor rellena esta información.";
+      }
+    } else if (currentStep === 4) {
+      if (!currentForm.smokingHabit) {
+        newErrors.smokingHabit = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.alcoholConsumption) {
+        newErrors.alcoholConsumption = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.physicalActivity) {
+        newErrors.physicalActivity = "Campo obligatorio. Por favor rellena esta información.";
+      }
+      if (!currentForm.stressLevel) {
+        newErrors.stressLevel = "Campo obligatorio. Por favor rellena esta información.";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
   const goNext = () => {
+    if (!validate(step, form)) return;
+
     if (step < TOTAL_STEPS) {
       setStep((s) => s + 1);
     }
@@ -87,12 +165,18 @@ const Register: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      // 1. Register User
+      console.log("=== PAYLOAD ENVIADO AL BACK ===");
+      console.log("Email:", form.email);
+      console.log("Password:", form.password);
+      console.log("Nombre completo:", form.fullName);
+      console.log("===============================");
+
       await api.post('/auth/register', {
         email: form.email,
         password: form.password,
         name: form.fullName,
-      });
+    });
+
 
       // 2. Login to get token
       const loginResponse = await api.post('/auth/login', {
@@ -116,7 +200,6 @@ const Register: React.FC = () => {
       await api.post('/patients', {
         firstName,
         lastName,
-        email: form.email,
         phone: form.phone,
         dob: dobISO,
         gender: form.biologicalSex || 'O',
@@ -125,24 +208,39 @@ const Register: React.FC = () => {
 
       console.log("Registro completo");
       navigation.navigate("Tutorial");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error en registro:", error);
-      alert("Hubo un error al registrar. Por favor intenta de nuevo.");
+
+      // Axios timeout has code 'ECONNABORTED' or message contains 'timeout'
+      const isTimeout = error?.code === 'ECONNABORTED' || (error?.message || '').toLowerCase().includes('timeout');
+
+      if (isTimeout) {
+        alert(
+          'La solicitud tardó demasiado (timeout). Verifica que el servidor esté levantado y que tu dispositivo/emulador pueda acceder a la URL de backend.' +
+            '\n\nSugerencias:\n• Asegúrate de que `BASE_URL` en api/api.ts use la IP de tu máquina (no localhost) cuando pruebas en dispositivo físico.\n• Revisa que el servidor esté corriendo en el puerto correcto y en la misma red.'
+        );
+      } else if (error?.response) {
+        // Server returned an error response
+        const serverMessage = error.response.data?.message || JSON.stringify(error.response.data);
+        alert('Error del servidor: ' + serverMessage);
+      } else {
+        alert('Hubo un error al registrar. Por favor intenta de nuevo.');
+      }
     }
   };
 
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <Step1PersonalData data={form} onChange={updateForm} />;
+        return <Step1PersonalData data={form} onChange={updateForm} errors={errors} />;
       case 2:
-        return <Step2MedicalData data={form} onChange={updateForm} />;
+        return <Step2MedicalData data={form} onChange={updateForm} errors={errors} />;
       case 3:
         return (
-          <Step3EmergencyContact data={form} onChange={updateForm} />
+          <Step3EmergencyContact data={form} onChange={updateForm} errors={errors} />
         );
       case 4:
-        return <Step4Preferences data={form} onChange={updateForm} />;
+        return <Step4Preferences data={form} onChange={updateForm} errors={errors} />;
       case 5:
         return (
           <Step5Summary
@@ -220,6 +318,7 @@ const Header = styled.View`
 const BackButton = styled.TouchableOpacity`
   padding: ${Theme.spacing.space1}px 0;
   margin-right: ${Theme.spacing.space2}px;
+  margin-top: ${Theme.spacing.space8}px;
 `;
 
 const HeaderTitle = styled.Text`
@@ -265,4 +364,3 @@ const PrimaryButtonText = styled.Text`
   font-size: ${Theme.typography.fontSizeLg}px;
   font-weight: 600;
 `;
- 

@@ -1,4 +1,3 @@
-// screens/LogIn.tsx
 import React from "react";
 import { ActivityIndicator } from "react-native";
 import styled from "styled-components/native";
@@ -6,77 +5,71 @@ import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import api from "../api/api";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { useAuth } from "../context";
 
 const LogIn: React.FC = () => {
-    const navigation = useNavigation<any>();
-    const [email, setEmail] = React.useState("");
-    const [password, setPassword] = React.useState("");
-    const [loading, setLoading] = React.useState(false);
+  const navigation = useNavigation<any>();
+  const { login } = useAuth();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
-    const handleGoBack = () => {
-      navigation.navigate("Welcome");
+  const handleGoBack = () => {
+    navigation.navigate("Welcome");
+  }
+
+  const handleStartRegister = () => {
+    navigation.navigate("Register");
+  }
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert("Por favor ingresa correo y contraseña");
+      return;
     }
 
-    const handleStartRegister = () => {
-      navigation.navigate("Register");
+    try {
+      setLoading(true);
+      const response = await api.post('/auth/login', {
+        email,
+        password
+      });
+
+      const { access_token } = response.data;
+      await login(access_token);
+
+      // Optional: Get user details to store locally if needed
+      // const userResponse = await api.get('/users/me'); 
+
+      setLoading(false);
+      // Navigation is handled automatically by AuthContext state change
+    } catch (error) {
+      setLoading(false);
+      console.error(error);
+      alert("Error al iniciar sesión. Verifica tus credenciales.");
     }
-
-    const handleLogin = async () => {
-      if (!email || !password) {
-        alert("Por favor ingresa correo y contraseña");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const response = await api.post('/auth/login', {
-          email,
-          password
-        });
-        
-        const { access_token } = response.data;
-        await AsyncStorage.setItem('access_token', access_token);
-        
-        // Optional: Get user details to store locally if needed
-        // const userResponse = await api.get('/users/me'); 
-        
-        setLoading(false);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }],
-        });
-      } catch (error) {
-        setLoading(false);
-        console.error(error);
-        alert("Error al iniciar sesión. Verifica tus credenciales.");
-      }
-    };
+  };
 
   return (
-
     <Container testID="login-screen" contentContainerStyle={{ padding: Theme.spacing.space6 }}>
       <HeaderImage
-        source={require("../assets/login-header.png")} // Asegúrate de tener esta imagen o usa un color
+        source={require("../assets/login-header.png")}
         resizeMode="cover"
       />
-      {/* Header con botón de retroceso */}
+
       <HeaderContainer>
         <BackButton onPress={handleGoBack}>
-            <Ionicons name="chevron-back" size={24} color={Theme.colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={Theme.colors.textPrimary} />
         </BackButton>
-       </HeaderContainer>
-      {/* Logo */}
+      </HeaderContainer>
+
       <LogoContainer>
         <LogoIcon name="heart" size={50} color={Theme.colors.white} />
       </LogoContainer>
 
-      {/* Títulos */}
       <Title>Bienvenido a UNIHealth</Title>
       <Subtitle>Inicia sesión con tu correo institucional</Subtitle>
 
-      {/* Correo institucional */}
       <FieldGroup>
         <Label>Correo Institucional</Label>
         <InputWrapper>
@@ -101,7 +94,6 @@ const LogIn: React.FC = () => {
         </HelperText>
       </FieldGroup>
 
-      {/* Contraseña */}
       <FieldGroup>
         <Label>Contraseña</Label>
         <InputWrapper>
@@ -123,22 +115,18 @@ const LogIn: React.FC = () => {
         </InputWrapper>
       </FieldGroup>
 
-      {/* ¿Olvidaste tu contraseña? */}
       <ForgotPasswordText>¿Olvidaste tu contraseña?</ForgotPasswordText>
 
-      {/* Botón Iniciar sesión */}
       <PrimaryButton testID="login-button" onPress={handleLogin} disabled={loading}>
         <PrimaryButtonText>{loading ? <ActivityIndicator color={Theme.colors.white} /> : "Iniciar Sesión"}</PrimaryButtonText>
       </PrimaryButton>
 
-      {/* Divider */}
       <DividerContainer>
         <DividerLine />
         <DividerText>¿No tienes cuenta?</DividerText>
         <DividerLine />
       </DividerContainer>
 
-      {/* Botón Comenzar registro (outlined) */}
       <SecondaryButton onPress={handleStartRegister}>
         <SecondaryButtonText>Comenzar Registro</SecondaryButtonText>
       </SecondaryButton>
@@ -286,7 +274,7 @@ const SecondaryButtonText = styled.Text`
   text-align: center;
   font-weight: 600;
 `;
- 
+
 const HeaderContainer = styled.View`
   flex-direction: row;
   align-items: center;
@@ -299,4 +287,5 @@ const BackButton = styled.TouchableOpacity`
   justify-content: center;
   align-items: center;
   border-radius: 20px;
+  margin-top: ${Theme.spacing.space8}px;
 `;

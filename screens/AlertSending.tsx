@@ -1,45 +1,69 @@
 // screens/AlertSending.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing } from "react-native";
 import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNotification } from "../context/NotificationContext";
 
 type AlertSendingParams = {
   type: string;
   description: string;
   canMove: boolean;
+  simulateError?: boolean;
 };
 
 const AlertSending: React.FC = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const params = route.params as AlertSendingParams | undefined;
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const { showNotification } = useNotification();
 
   useEffect(() => {
+    // Start rotation animation
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
     // Simulación de envío:
-    // mínimo 4s, máx 7s (aquí lo dejamos fijo en 5s, puedes ajustarlo)
     const timer = setTimeout(() => {
-      console.log("Alerta enviada con éxito:", params);
-      // Después de enviar, por ejemplo ir al Home (tabs)
-      navigation.navigate("AlertState" as never);
-    }, 5000); // 5000ms = 5s
+      if (params?.simulateError) {
+        showNotification("error_alert");
+        navigation.goBack();
+      } else {
+        showNotification("success_alert");
+        console.log("Alerta enviada con éxito:", params);
+        navigation.navigate("AlertState" as never);
+      }
+    }, 5000);
 
     return () => clearTimeout(timer);
-  }, [navigation, params]);
+  }, [navigation, params, showNotification]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   return (
     <Container>
       <Content>
         <BigCircle>
           <MiddleCircle>
-            <InnerCircle>
+            <AnimatedInnerCircle style={{ transform: [{ rotate: spin }] }}>
               <Ionicons
                 name="sync-outline"
                 size={40}
                 color={Theme.colors.white}
               />
-            </InnerCircle>
+            </AnimatedInnerCircle>
           </MiddleCircle>
         </BigCircle>
 
@@ -99,6 +123,8 @@ const InnerCircle = styled.View`
   border-color: #fbd0e0;
 `;
 
+const AnimatedInnerCircle = Animated.createAnimatedComponent(InnerCircle);
+
 const Title = styled.Text`
   font-size: ${Theme.typography.fontSizeLg}px;
   font-weight: 600;
@@ -118,4 +144,3 @@ const HelperText = styled.Text`
   font-size: ${Theme.typography.fontSizeXs}px;
   color: ${Theme.colors.textSecondary};
 `;
- 

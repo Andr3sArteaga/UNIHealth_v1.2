@@ -5,22 +5,8 @@ import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-
-const MOCK_INSURANCE = {
-  provider: "Ecuasanitas",
-  policyNumber: "ES-2025-123456",
-  validUntil: "12/2025",
-};
-
-const MOCK_USER = {
-  name: "María García Rodríguez",
-  age: 39,
-  sex: "Femenino",
-  bloodType: "O+",
-};
-
-const MOCK_CONDITIONS = ["Diabetes Tipo 2", "Hipertensión", "Artritis"];
-const MOCK_ALLERGIES = ["Penicilina", "Polen"];
+import api from "../api/api";
+import { useFocusEffect } from "@react-navigation/native";
 
 const MOCK_CONSULTATIONS = [
   {
@@ -64,6 +50,40 @@ const MedicalHistory: React.FC = () => {
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const hiddenInputRef = useRef<TextInput | null>(null);
+
+  // Patient data state
+  const [patientData, setPatientData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPatientData = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/user/profile');
+      const profile = response.data.patientProfile;
+      setPatientData(profile);
+    } catch (error) {
+      console.log("Error fetching patient data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchPatientData();
+    }, [])
+  );
+
+  const calculateAge = (dob: string) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   const handleBack = () => {
     navigation.goBack();
@@ -155,13 +175,17 @@ const MedicalHistory: React.FC = () => {
             </InsuranceIconWrapper>
           </InsuranceTopRow>
 
-          <InsuranceProvider>{MOCK_INSURANCE.provider}</InsuranceProvider>
+          <InsuranceProvider>{patientData?.hasInsurance ? patientData.insuranceProvider || "Proveedor no especificado" : "Sin seguro médico"}</InsuranceProvider>
 
-          <InsuranceFieldLabel>Número de póliza</InsuranceFieldLabel>
-          <InsuranceFieldValue>{MOCK_INSURANCE.policyNumber}</InsuranceFieldValue>
+          {patientData?.hasInsurance && (
+            <>
+              <InsuranceFieldLabel>Número de póliza</InsuranceFieldLabel>
+              <InsuranceFieldValue>No disponible</InsuranceFieldValue>
 
-          <InsuranceFieldLabel>Válida hasta</InsuranceFieldLabel>
-          <InsuranceFieldValue>{MOCK_INSURANCE.validUntil}</InsuranceFieldValue>
+              <InsuranceFieldLabel>Válida hasta</InsuranceFieldLabel>
+              <InsuranceFieldValue>No disponible</InsuranceFieldValue>
+            </>
+          )}
         </InsuranceCard>
 
         {/* CONTENIDO BLOQUEADO vs DESBLOQUEADO */}
@@ -260,38 +284,37 @@ const MedicalHistory: React.FC = () => {
           <>
             {/* RESUMEN DEL PACIENTE */}
             <PatientCard>
-              <PatientName>{MOCK_USER.name}</PatientName>
+              <PatientName>{patientData ? `${patientData.firstName} ${patientData.lastName}` : "Cargando..."}</PatientName>
               <PatientSubtitle>
-                {MOCK_USER.age} años • {MOCK_USER.sex} • Grupo:{" "}
-                {MOCK_USER.bloodType}
+                {patientData ? `${calculateAge(patientData.dob)} años • ${patientData.gender === 'M' ? 'Masculino' : patientData.gender === 'F' ? 'Femenino' : 'Otro'} • Grupo: O+` : ""}
               </PatientSubtitle>
 
               <PatientRow>
                 <PatientColumn>
                   <PatientSectionLabel>Condiciones crónicas</PatientSectionLabel>
                   <ChipsRow>
-                    {MOCK_CONDITIONS.map((c) => (
+                    {patientData?.chronicDiseases?.length > 0 ? patientData.chronicDiseases.map((c: string) => (
                       <ConditionChip key={c}>
                         <ConditionText>{c}</ConditionText>
                       </ConditionChip>
-                    ))}
+                    )) : <ConditionText>Ninguna</ConditionText>}
                   </ChipsRow>
                 </PatientColumn>
 
                 <PatientColumn>
                   <PatientSectionLabel>Alergias</PatientSectionLabel>
                   <ChipsRow>
-                    {MOCK_ALLERGIES.map((a) => (
-                      <AllergyChip key={a}>
+                    {patientData?.allergies ? (
+                      <AllergyChip>
                         <Ionicons
                           name="alert-circle-outline"
                           size={14}
                           color={Theme.colors.warning}
                           style={{ marginRight: 4 }}
                         />
-                        <AllergyText>{a}</AllergyText>
+                        <AllergyText>{patientData.allergies}</AllergyText>
                       </AllergyChip>
-                    ))}
+                    ) : <AllergyText>Ninguna</AllergyText>}
                   </ChipsRow>
                 </PatientColumn>
               </PatientRow>

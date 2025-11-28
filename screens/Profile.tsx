@@ -23,7 +23,7 @@ const Profile: React.FC = () => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await api.get('/users/profile');
+      const response = await api.get('/user/profile');
       const profile = response.data.patientProfile;
       const email = response.data.email;
       
@@ -32,15 +32,21 @@ const Profile: React.FC = () => {
           initials: `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`,
           name: `${profile.firstName} ${profile.lastName}`,
           email: email,
-          insuranceProvider: "Ecuasanitas", // Placeholder until backend supports it
-          policyNumber: "ES-2025-123456", // Placeholder
-          validUntil: "12/2025", // Placeholder
+          insuranceProvider: profile.hasInsurance ? profile.insuranceProvider || "Proveedor no especificado" : "Sin seguro médico",
+          policyNumber: "---", // Placeholder until backend supports it
+          validUntil: "---", // Placeholder
         });
       } else {
          setUser(prev => ({ ...prev, email: email, name: email.split('@')[0] }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log("Error fetching profile", error);
+      if (error.response) {
+        console.log("Response status:", error.response.status);
+        console.log("Response data:", error.response.data);
+      } else {
+        console.log("No response, check network or URL");
+      }
     }
   };
 

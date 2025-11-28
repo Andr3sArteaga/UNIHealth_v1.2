@@ -2,9 +2,13 @@ import React from "react";
 import styled from "styled-components/native";
 import { Theme } from "../colors";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Platform, Pressable } from "react-native"; 
 // Si usas Picker, instala: yarn add @react-native-picker/picker
 import { Picker } from "@react-native-picker/picker";
+
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 
 export type Step1PersonalDataForm = {
   email: string;
@@ -20,6 +24,7 @@ export type Step1PersonalDataForm = {
 type Props = {
   data: Step1PersonalDataForm;
   onChange: (partial: Partial<Step1PersonalDataForm>) => void;
+  errors?: Partial<Record<keyof Step1PersonalDataForm, string>>;
 };
 
 const maritalOptions = [
@@ -31,7 +36,37 @@ const maritalOptions = [
   "Separado/a",
 ];
 
-const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
+const Step1PersonalData: React.FC<Props> = ({ data, onChange, errors }) => {
+  const [showDatePicker, setShowDatePicker] = React.useState(false);
+
+  const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const parseBirthDate = (value: string | null | undefined) => {
+    if (!value) return new Date(1990, 0, 1);
+    const [day, month, year] = value.split("/").map(Number);
+    if (!day || !month || !year) return new Date(1990, 0, 1);
+    return new Date(year, month - 1, day);
+  };
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selected?: Date
+  ) => {
+    if (event.type === "dismissed") {
+      setShowDatePicker(false);
+      return;
+    }
+
+    const picked = selected ?? new Date();
+    setShowDatePicker(false);
+    const formatted = formatDate(picked);
+    onChange({ birthDate: formatted });
+  };
   return (
     <Container>
       {/* Título de sección */}
@@ -56,6 +91,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ email: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.email && <ErrorText>{errors.email}</ErrorText>}
       </FieldGroup>
 
       {/* Contraseña */}
@@ -71,6 +107,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ password: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.password && <ErrorText>{errors.password}</ErrorText>}
       </FieldGroup>
 
       {/* Nombre completo */}
@@ -85,6 +122,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ fullName: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.fullName && <ErrorText>{errors.fullName}</ErrorText>}
       </FieldGroup>
 
       {/* Cédula / DNI */}
@@ -99,6 +137,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
           onChangeText={(text) => onChange({ dni: text })}
           placeholderTextColor={Theme.colors.textTertiary}
         />
+        {errors?.dni && <ErrorText>{errors.dni}</ErrorText>}
       </FieldGroup>
 
       {/* Fecha de nacimiento */}
@@ -106,21 +145,29 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
         <Label>
           Fecha de nacimiento <Required>*</Required>
         </Label>
-        <DateInputWrapper>
-          <DateInput
-            placeholder="dd/mm/aaaa"
-            value={data.birthDate}
-            onChangeText={(text) => onChange({ birthDate: text })}
-            placeholderTextColor={Theme.colors.textTertiary}
-          />
-          <CalendarIconWrapper>
-            <MaterialIcons
-              name="calendar-today"
-              size={20}
-              color={Theme.colors.textSecondary}
+        <Pressable onPress={() => setShowDatePicker(true)}>
+          <DateInputWrapper>
+            <DateInput
+              placeholder="dd/mm/aaaa"
+              value={data.birthDate}
+              editable={false}
+              placeholderTextColor={Theme.colors.textTertiary}
             />
-          </CalendarIconWrapper>
-        </DateInputWrapper>
+            <CalendarIconWrapper>
+              <MaterialIcons name="calendar-today" size={20} color={Theme.colors.textSecondary} />
+            </CalendarIconWrapper>
+          </DateInputWrapper>
+        </Pressable>
+        {errors?.birthDate && <ErrorText>{errors.birthDate}</ErrorText>}
+        {showDatePicker && (
+          <DateTimePicker
+            value={parseBirthDate(data.birthDate)}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            maximumDate={new Date()}
+            onChange={handleDateChange}
+          />
+        )}
       </FieldGroup>
 
       {/* Sexo biológico */}
@@ -151,6 +198,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
             <RadioLabel>Otro</RadioLabel>
           </RadioRow>
         </RadioGroup>
+        {errors?.biologicalSex && <ErrorText>{errors.biologicalSex}</ErrorText>}
       </FieldGroup>
 
       {/* Identidad de género (opcional) */}
@@ -193,6 +241,7 @@ const Step1PersonalData: React.FC<Props> = ({ data, onChange }) => {
             />
           </DropdownIcon>
         </DropdownWrapper>
+        {errors?.maritalStatus && <ErrorText>{errors.maritalStatus}</ErrorText>}
       </FieldGroup>
     </Container>
   );
@@ -310,4 +359,9 @@ const DropdownIcon = styled.View`
   top: 50%;
   margin-top: -10px;
 `;
- 
+
+const ErrorText = styled.Text`
+  color: ${Theme.colors.primary};
+  margin-top: 6px;
+  font-size: ${Theme.typography.fontSizeXs}px;
+`;

@@ -14,6 +14,7 @@ export type Step4PreferencesForm = {
 type Props = {
   data: Step4PreferencesForm;
   onChange: (partial: Partial<Step4PreferencesForm>) => void;
+  errors?: Partial<Record<keyof Step4PreferencesForm, string>>;
 };
 
 const familyHistoryOptions = [
@@ -46,7 +47,7 @@ const physicalActivityOptions = [
   { key: "diario", label: "Diariamente" },
 ];
 
-const Step4Preferences: React.FC<Props> = ({ data, onChange }) => {
+const Step4Preferences: React.FC<Props> = ({ data, onChange, errors }) => {
   const toggleFamilyHistory = (option: string) => {
     const exists = data.familyHistory.includes(option);
     const familyHistory = exists
@@ -116,6 +117,7 @@ const Step4Preferences: React.FC<Props> = ({ data, onChange }) => {
             );
           })}
         </ChipRow>
+        {errors?.smokingHabit && <ErrorText>{errors.smokingHabit}</ErrorText>}
       </FieldGroup>
 
       {/* Consumo de alcohol */}
@@ -138,6 +140,7 @@ const Step4Preferences: React.FC<Props> = ({ data, onChange }) => {
             );
           })}
         </ChipRow>
+        {errors?.alcoholConsumption && <ErrorText>{errors.alcoholConsumption}</ErrorText>}
       </FieldGroup>
 
       {/* Actividad física */}
@@ -160,6 +163,7 @@ const Step4Preferences: React.FC<Props> = ({ data, onChange }) => {
             );
           })}
         </ChipRow>
+        {errors?.physicalActivity && <ErrorText>{errors.physicalActivity}</ErrorText>}
       </FieldGroup>
 
       {/* Nivel de estrés */}
@@ -187,6 +191,8 @@ const Step4Preferences: React.FC<Props> = ({ data, onChange }) => {
         <StressBarContainer>
           <StressBarFill style={stressFillStyle} />
         </StressBarContainer>
+
+        {errors?.stressLevel && <ErrorText>{errors.stressLevel}</ErrorText>}
 
         <StressLabelsRow>
           <StressLabel>Bajo</StressLabel>
@@ -332,5 +338,11 @@ const StressLabelsRow = styled.View`
 const StressLabel = styled.Text`
   font-size: ${Theme.typography.fontSizeXs}px;
   color: ${Theme.colors.textSecondary};
+`;
+
+const ErrorText = styled.Text`
+  color: ${Theme.colors.primary};
+  margin-top: 6px;
+  font-size: ${Theme.typography.fontSizeXs}px;
 `;
  

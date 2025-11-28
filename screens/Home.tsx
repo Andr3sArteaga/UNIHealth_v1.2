@@ -1,42 +1,49 @@
 import React from "react";
+import { View, ScrollView, Image, TouchableOpacity, Text } from "react-native";
 import styled from "styled-components/native";
-import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-
+import { Theme } from "../components/colors";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import api from "../api/api";
-import { useFocusEffect } from "@react-navigation/native";
+import { useNotification } from "../context/NotificationContext";
 
 const Home: React.FC = () => {
-    const navigation = useNavigation<any>();
-    const [userName, setUserName] = React.useState("Usuario");
-    const [initials, setInitials] = React.useState("U");
+  const navigation = useNavigation<any>();
+  const { showNotification } = useNotification();
+  const [userName, setUserName] = React.useState("Usuario");
+  const [initials, setInitials] = React.useState("U");
 
-    const fetchUserProfile = async () => {
-      try {
-        const response = await api.get('/users/profile');
-        const profile = response.data.patientProfile;
-        if (profile && profile.firstName) {
-          setUserName(`${profile.firstName} ${profile.lastName}`);
-          setInitials(`${profile.firstName[0]}${profile.lastName[0]}`);
-        } else if (response.data.email) {
-           setUserName(response.data.email.split('@')[0]);
-           setInitials(response.data.email[0].toUpperCase());
-        }
-      } catch (error) {
-        console.log("Error fetching profile", error);
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/user/profile');
+      const profile = response.data.patientProfile;
+      if (profile && profile.firstName) {
+        setUserName(`${profile.firstName} ${profile.lastName}`);
+        setInitials(`${profile.firstName[0]}${profile.lastName[0]}`);
+      } else if (response.data.email) {
+        setUserName(response.data.email.split('@')[0]);
+        setInitials(response.data.email[0].toUpperCase());
       }
-    };
-
-    useFocusEffect(
-      React.useCallback(() => {
-        fetchUserProfile();
-      }, [])
-    );
-
-    const handleOpenAlert = () => {
-      navigation.navigate("Alert");
+    } catch (error: any) {
+      console.log("Error fetching profile", error);
+      if (error.response) {
+        console.log("Response status:", error.response.status);
+        console.log("Response data:", error.response.data);
+      } else {
+        console.log("No response, check network or URL");
+      }
     }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserProfile();
+    }, [])
+  );
+
+  const handleOpenAlert = () => {
+    navigation.navigate("Alert");
+  }
 
   return (
     <Container>
@@ -109,17 +116,6 @@ const Home: React.FC = () => {
                 />
               </QuickCardIcon>
               <QuickCardLabel>Diario Médico</QuickCardLabel>
-            </QuickCard>
-
-            <QuickCard>
-              <QuickCardIcon>
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={24}
-                  color={Theme.colors.white}
-                />
-              </QuickCardIcon>
-              <QuickCardLabel>Chat</QuickCardLabel>
             </QuickCard>
           </QuickAccessGrid>
 
@@ -205,6 +201,22 @@ const Home: React.FC = () => {
               <VitalSubStatus>Última medición</VitalSubStatus>
             </VitalCard>
           </VitalsGrid>
+
+          {/* Test Notification Button */}
+          <TouchableOpacity
+            style={{
+              marginTop: 20,
+              padding: 10,
+              backgroundColor: Theme.colors.primaryLight,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+            onPress={() => showNotification("vitals")}
+          >
+            <Text style={{ color: Theme.colors.primary, fontWeight: "600" }}>
+              Simular Actualización de Signos Vitales
+            </Text>
+          </TouchableOpacity>
         </ContentInner>
       </ContentScroll>
     </Container>
@@ -225,9 +237,9 @@ const ContentScroll = styled.ScrollView`
 `;
 
 const Header = styled.View`
-  background-color: ${Theme.colors.primaryDark};
-  padding: ${Theme.spacing.space5}px ${Theme.spacing.space4}px
-    ${Theme.spacing.space6}px;
+  background-color: ${Theme.colors.primary};
+  padding: ${Theme.spacing.space4}px;
+  padding-top: ${Theme.spacing.space12}px;
   border-bottom-left-radius: 24px;
   border-bottom-right-radius: 24px;
 `;
@@ -236,90 +248,80 @@ const HeaderTopRow = styled.View`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${Theme.spacing.space4}px;
+  margin-bottom: ${Theme.spacing.space6}px;
 `;
 
 const GreetingWrapper = styled.View``;
 
 const GreetingSmall = styled.Text`
   font-size: ${Theme.typography.fontSizeSm}px;
-  color: ${Theme.colors.white};
+  color: rgba(255, 255, 255, 0.8);
 `;
 
 const GreetingName = styled.Text`
-  font-size: ${Theme.typography.fontSizeLg}px;
-  font-weight: 600;
+  font-size: ${Theme.typography.fontSizeXl}px;
+  font-weight: 700;
   color: ${Theme.colors.white};
 `;
 
 const ProfileBubble = styled.View`
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: ${Theme.colors.white};
-  align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.2);
   justify-content: center;
+  align-items: center;
 `;
 
 const ProfileInitials = styled.Text`
   font-size: ${Theme.typography.fontSizeSm}px;
   font-weight: 600;
-  color: ${Theme.colors.primaryDark};
+  color: ${Theme.colors.white};
 `;
 
 const EmergencyButton = styled.TouchableOpacity`
-  margin-top: ${Theme.spacing.space2}px;
-  background-color: ${Theme.colors.white};
-  border-radius: 18px;
-  padding-vertical: ${Theme.spacing.space3}px;
-  padding-horizontal: ${Theme.spacing.space4}px;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  background-color: ${Theme.colors.white};
+  padding: ${Theme.spacing.space3}px;
+  border-radius: 12px;
+  ${() => Theme.shadows.shadowSm}
 `;
 
 const EmergencyIconWrapper = styled.View`
-  width: 26px;
-  height: 26px;
-  border-radius: 13px;
-  background-color: ${Theme.colors.primaryLight};
-  align-items: center;
-  justify-content: center;
   margin-right: ${Theme.spacing.space2}px;
 `;
 
 const EmergencyText = styled.Text`
-  font-size: ${Theme.typography.fontSizeLg}px;
-  font-weight: 600;
   color: ${Theme.colors.primary};
+  font-weight: 700;
+  font-size: ${Theme.typography.fontSizeSm}px;
 `;
-
-/* Content */
 
 const ContentInner = styled.View`
   padding: ${Theme.spacing.space4}px;
 `;
 
 const SectionHeader = styled.View`
-  margin-top: ${Theme.spacing.space4}px;
-  margin-bottom: ${Theme.spacing.space2}px;
+  margin-bottom: ${Theme.spacing.space3}px;
 `;
 
 const SectionHeaderRow = styled.View`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-top: ${Theme.spacing.space4}px;
-  margin-bottom: ${Theme.spacing.space2}px;
+  margin-top: ${Theme.spacing.space6}px;
+  margin-bottom: ${Theme.spacing.space3}px;
 `;
 
 const SectionTitle = styled.Text`
   font-size: ${Theme.typography.fontSizeLg}px;
-  font-weight: 600;
+  font-weight: 700;
   color: ${Theme.colors.textPrimary};
 `;
 
-const SeeAllRow = styled.TouchableOpacity`
+const SeeAllRow = styled.View`
   flex-direction: row;
   align-items: center;
 `;
@@ -327,72 +329,65 @@ const SeeAllRow = styled.TouchableOpacity`
 const SeeAllText = styled.Text`
   font-size: ${Theme.typography.fontSizeSm}px;
   color: ${Theme.colors.primary};
-  margin-right: 2px;
+  margin-right: 4px;
 `;
-
-/* Quick access */
 
 const QuickAccessGrid = styled.View`
   flex-direction: row;
-  flex-wrap: wrap;
   justify-content: space-between;
 `;
 
-const QuickCard = styled.TouchableOpacity`
-  width: 48%;
-  border-radius: 18px;
-  background-color: ${Theme.colors.white};
+const QuickCard = styled.View`
+  width: 30%;
+  background-color: ${Theme.colors.primary};
+  border-radius: 16px;
   padding: ${Theme.spacing.space3}px;
-  margin-bottom: ${Theme.spacing.space3}px;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
   ${() => Theme.shadows.shadowSm}
-  align-items: flex-start;
 `;
 
 const QuickCardIcon = styled.View`
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background-color: ${Theme.colors.primary};
-  align-items: center;
-  justify-content: center;
   margin-bottom: ${Theme.spacing.space2}px;
 `;
 
 const QuickCardLabel = styled.Text`
-  font-size: ${Theme.typography.fontSizeSm}px;
-  color: ${Theme.colors.textPrimary};
+  font-size: ${Theme.typography.fontSizeXs}px;
+  color: ${Theme.colors.white};
+  text-align: center;
+  font-weight: 500;
 `;
-
-/* Appointment */
 
 const AppointmentCard = styled.View`
   flex-direction: row;
-  align-items: center;
   background-color: ${Theme.colors.white};
-  border-radius: 18px;
-  padding: ${Theme.spacing.space3}px ${Theme.spacing.space4}px;
+  border-radius: 16px;
+  padding: ${Theme.spacing.space3}px;
+  align-items: center;
   ${() => Theme.shadows.shadowSm}
 `;
 
 const AppointmentDateBlock = styled.View`
-  width: 52px;
-  border-radius: 16px;
-  background-color: ${Theme.colors.primary};
+  background-color: ${Theme.colors.primaryLight};
+  padding: ${Theme.spacing.space2}px;
+  border-radius: 12px;
   align-items: center;
   justify-content: center;
-  padding-vertical: ${Theme.spacing.space2}px;
+  width: 50px;
+  height: 50px;
   margin-right: ${Theme.spacing.space3}px;
 `;
 
 const AppointmentDay = styled.Text`
-  font-size: ${Theme.typography.fontSizeLg}px;
+  font-size: ${Theme.typography.fontSizeSm}px;
   font-weight: 700;
-  color: ${Theme.colors.white};
+  color: ${Theme.colors.primary};
 `;
 
 const AppointmentMonth = styled.Text`
   font-size: ${Theme.typography.fontSizeXs}px;
-  color: ${Theme.colors.white};
+  color: ${Theme.colors.primary};
 `;
 
 const AppointmentInfo = styled.View`
@@ -409,20 +404,16 @@ const AppointmentTitle = styled.Text`
 const AppointmentLine = styled.View`
   flex-direction: row;
   align-items: center;
-  margin-top: 2px;
+  margin-bottom: 2px;
 `;
 
 const AppointmentLineText = styled.Text`
-  margin-left: 4px;
   font-size: ${Theme.typography.fontSizeXs}px;
   color: ${Theme.colors.textSecondary};
+  margin-left: 4px;
 `;
 
-const AppointmentArrow = styled.View`
-  margin-left: ${Theme.spacing.space2}px;
-`;
-
-/* Vitals */
+const AppointmentArrow = styled.View``;
 
 const VitalsGrid = styled.View`
   flex-direction: row;
@@ -432,33 +423,33 @@ const VitalsGrid = styled.View`
 
 const VitalCard = styled.View`
   width: 48%;
-  border-radius: 18px;
   background-color: ${Theme.colors.white};
+  border-radius: 16px;
   padding: ${Theme.spacing.space3}px;
   margin-bottom: ${Theme.spacing.space3}px;
   ${() => Theme.shadows.shadowSm}
 `;
 
 const VitalLabel = styled.Text`
-  font-size: ${Theme.typography.fontSizeXs}px;
+  font-size: ${Theme.typography.fontSizeSm}px;
   color: ${Theme.colors.textSecondary};
-  margin-bottom: 4px;
+  margin-bottom: ${Theme.spacing.space1}px;
 `;
 
 const VitalValue = styled.Text`
-  font-size: ${Theme.typography.fontSizeXl}px;
-  font-weight: 600;
+  font-size: ${Theme.typography.fontSizeLg}px;
+  font-weight: 700;
   color: ${Theme.colors.textPrimary};
+  margin-bottom: ${Theme.spacing.space1}px;
 `;
 
 const VitalStatus = styled.Text`
-  margin-top: 4px;
   font-size: ${Theme.typography.fontSizeXs}px;
   color: ${Theme.colors.success};
+  font-weight: 500;
 `;
 
 const VitalSubStatus = styled.Text`
-  margin-top: 4px;
   font-size: ${Theme.typography.fontSizeXs}px;
-  color: ${Theme.colors.textSecondary};
+  color: ${Theme.colors.textTertiary};
 `;

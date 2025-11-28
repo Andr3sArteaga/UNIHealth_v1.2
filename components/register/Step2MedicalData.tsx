@@ -15,6 +15,7 @@ export type Step2MedicalDataForm = {
 type Props = {
   data: Step2MedicalDataForm;
   onChange: (partial: Partial<Step2MedicalDataForm>) => void;
+  errors?: Partial<Record<keyof Step2MedicalDataForm, string>>;
 };
 
 const chronicOptions = [
@@ -28,7 +29,7 @@ const chronicOptions = [
   "Otro",
 ];
 
-const Step2MedicalData: React.FC<Props> = ({ data, onChange }) => {
+const Step2MedicalData: React.FC<Props> = ({ data, onChange, errors }) => {
   const toggleChronic = (option: string) => {
     const exists = data.chronicDiseases.includes(option);
     const chronicDiseases = exists
@@ -71,6 +72,7 @@ const Step2MedicalData: React.FC<Props> = ({ data, onChange }) => {
             );
           })}
         </ChipsGrid>
+            {errors?.chronicDiseases && <ErrorText>{errors.chronicDiseases}</ErrorText>}
       </FieldGroup>
 
       {/* Medicamentos regulares */}
@@ -296,5 +298,11 @@ const CheckboxBox = styled.View<{ $checked: boolean }>`
 const CheckboxLabel = styled.Text`
   font-size: ${Theme.typography.fontSizeSm}px;
   color: ${Theme.colors.textPrimary};
+`;
+
+const ErrorText = styled.Text`
+  color: ${Theme.colors.primary};
+  margin-top: 6px;
+  font-size: ${Theme.typography.fontSizeXs}px;
 `;
  
