@@ -48,12 +48,12 @@ const Tutorial: React.FC = () => {
       setIndex((prev) => prev + 1);
     } else {
       // destino final después del tutorial
-      navigation.navigate("MainTabs" as never);
+      // Navigation handled automatically by AuthContext
     }
   };
 
   const handleSkip = () => {
-    navigation.navigate("MainTabs" as never); 
+    // Navigation handled automatically by AuthContext 
   };
 
   return (
@@ -256,3 +256,4 @@ const SkipText = styled.Text`
   text-align: center;
 `;
  
+

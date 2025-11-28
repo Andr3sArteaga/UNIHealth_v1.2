@@ -5,13 +5,14 @@ import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Switch } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../context";
 
 import api from "../api/api";
 import { useFocusEffect } from "@react-navigation/native";
 
 const Profile: React.FC = () => {
   const navigation = useNavigation<any>();
-
+  const { logout } = useAuth();
   const [user, setUser] = useState({
     initials: "U",
     name: "Cargando...",
@@ -26,7 +27,7 @@ const Profile: React.FC = () => {
       const response = await api.get('/user/profile');
       const profile = response.data.patientProfile;
       const email = response.data.email;
-      
+
       if (profile) {
         setUser({
           initials: `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`,
@@ -37,7 +38,7 @@ const Profile: React.FC = () => {
           validUntil: "---", // Placeholder
         });
       } else {
-         setUser(prev => ({ ...prev, email: email, name: email.split('@')[0] }));
+        setUser(prev => ({ ...prev, email: email, name: email.split('@')[0] }));
       }
     } catch (error: any) {
       console.log("Error fetching profile", error);
@@ -67,6 +68,9 @@ const Profile: React.FC = () => {
 
   const handleOpenMedicalHistory = () => {
     navigation.navigate("MedicalHistory" as never);
+  };
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
@@ -266,6 +270,28 @@ const Profile: React.FC = () => {
               thumbColor={
                 emergencyEnabled ? Theme.colors.primary : Theme.colors.white
               }
+            />
+          </SettingsItem>
+        </SettingsGroup>
+      </Section>
+      {/* CERRAR SESIÓN */}
+      <Section>
+        <SettingsGroup>
+          <SettingsItem onPress={handleLogout}>
+            <SettingsLeft>
+              <SettingsIconWrapper>
+                <Ionicons
+                  name="log-out-outline"
+                  size={18}
+                  color="#E53E3E"
+                />
+              </SettingsIconWrapper>
+              <SettingsLabel style={{ color: "#E53E3E" }}>Cerrar Sesión</SettingsLabel>
+            </SettingsLeft>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={Theme.colors.textTertiary}
             />
           </SettingsItem>
         </SettingsGroup>
