@@ -316,7 +316,7 @@ const ContentScroll = styled.ScrollView`
 /* Header */
 
 const TopHeader = styled.View`
-  padding: ${Theme.spacing.space4}px ${Theme.spacing.space4}px 0;
+  padding: 48px 16px 10px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;

@@ -1,329 +1,21 @@
 // screens/Profile.tsx
-import React, { useState } from "react";
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import styled from "styled-components/native";
-import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { Switch } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../context";
+import { Theme } from "../components/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "../context/AuthContext";
 
-import api from "../api/api";
-import { useFocusEffect } from "@react-navigation/native";
-
-const Profile: React.FC = () => {
-  const navigation = useNavigation<any>();
-  const { logout } = useAuth();
-  const [user, setUser] = useState({
-    initials: "U",
-    name: "Cargando...",
-    email: "",
-    insuranceProvider: "No registrado",
-    policyNumber: "---",
-    validUntil: "---",
-  });
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await api.get('/user/profile');
-      const profile = response.data.patientProfile;
-      const email = response.data.email;
-
-      if (profile) {
-        setUser({
-          initials: `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`,
-          name: `${profile.firstName} ${profile.lastName}`,
-          email: email,
-          insuranceProvider: profile.hasInsurance ? profile.insuranceProvider || "Proveedor no especificado" : "Sin seguro médico",
-          policyNumber: "---", // Placeholder until backend supports it
-          validUntil: "---", // Placeholder
-        });
-      } else {
-        setUser(prev => ({ ...prev, email: email, name: email.split('@')[0] }));
-      }
-    } catch (error: any) {
-      console.log("Error fetching profile", error);
-      if (error.response) {
-        console.log("Response status:", error.response.status);
-        console.log("Response data:", error.response.data);
-      } else {
-        console.log("No response, check network or URL");
-      }
-    }
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchUserProfile();
-    }, [])
-  );
-
-  const [remindersEnabled, setRemindersEnabled] = useState(true);
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emergencyEnabled, setEmergencyEnabled] = useState(true);
-
-  const handleEditPersonalInfo = () => {
-    // aquí más adelante puedes navegar a una pantalla de edición
-    console.log("Ir a Información Personal");
-  };
-
-  const handleOpenMedicalHistory = () => {
-    navigation.navigate("MedicalHistory" as never);
-  };
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  return (
-    <Container
-      contentContainerStyle={{
-        paddingBottom: Theme.spacing.space10,
-      }}
-    >
-      {/* HEADER ROJO */}
-      <Header>
-        <HeaderTopRow>
-          {/* podrías poner un botón de ajustes arriba a la derecha más adelante */}
-        </HeaderTopRow>
-
-        <AvatarContainer>
-          <AvatarCircle>
-            <AvatarInitials>{user.initials}</AvatarInitials>
-            <AvatarEditBadge>
-              <Ionicons
-                name="pencil"
-                size={14}
-                color={Theme.colors.primary}
-              />
-            </AvatarEditBadge>
-          </AvatarCircle>
-
-          <UserName testID="profile-name">{user.name}</UserName>
-          <UserEmail testID="profile-email">{user.email}</UserEmail>
-        </AvatarContainer>
-      </Header>
-
-      {/* TARJETA QR */}
-      <Section>
-        <CardQR>
-          <CardQRHeader>
-            <CardQRTitle>Código QR de Identificación</CardQRTitle>
-            <Ionicons
-              name="qr-code-outline"
-              size={20}
-              color={Theme.colors.primary}
-            />
-          </CardQRHeader>
-          <CardQRSubtitle>Muestra este código en el kiosco</CardQRSubtitle>
-
-          <QRPlaceholder>
-            <Ionicons
-              name="qr-code-outline"
-              size={56}
-              color={Theme.colors.primary}
-            />
-          </QRPlaceholder>
-        </CardQR>
-      </Section>
-
-      {/* TARJETA SEGURO MÉDICO */}
-      <Section>
-        <InsuranceCard>
-          <InsuranceHeader>
-            <InsuranceTextSmall>Seguro Médico</InsuranceTextSmall>
-            <Ionicons
-              name="card-outline"
-              size={22}
-              color={Theme.colors.white}
-            />
-          </InsuranceHeader>
-
-          <InsuranceProvider>{user.insuranceProvider}</InsuranceProvider>
-
-          <InsuranceDetailLabel>Número de póliza</InsuranceDetailLabel>
-          <InsuranceDetailValue>{user.policyNumber}</InsuranceDetailValue>
-
-          <InsuranceDetailLabel>Válida hasta</InsuranceDetailLabel>
-          <InsuranceDetailValue>{user.validUntil}</InsuranceDetailValue>
-        </InsuranceCard>
-      </Section>
-
-      {/* CUENTA */}
-      <Section>
-        <SectionTitle>CUENTA</SectionTitle>
-
-        <SettingsGroup>
-          <SettingsItem onPress={handleEditPersonalInfo}>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="person-outline"
-                  size={18}
-                  color={Theme.colors.primary}
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel>Información Personal</SettingsLabel>
-            </SettingsLeft>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={Theme.colors.textTertiary}
-            />
-          </SettingsItem>
-
-          <ItemDivider />
-
-          <SettingsItem onPress={handleOpenMedicalHistory}>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="heart-outline"
-                  size={18}
-                  color={Theme.colors.primary}
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel>Historial Médico</SettingsLabel>
-            </SettingsLeft>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={Theme.colors.textTertiary}
-            />
-          </SettingsItem>
-        </SettingsGroup>
-      </Section>
-
-      {/* NOTIFICACIONES */}
-      <Section>
-        <SectionTitle>NOTIFICACIONES</SectionTitle>
-
-        <SettingsGroup>
-          <SettingsItem>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="alarm-outline"
-                  size={18}
-                  color={Theme.colors.primary}
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel>Recordatorios de citas</SettingsLabel>
-            </SettingsLeft>
-            <Switch
-              value={remindersEnabled}
-              onValueChange={setRemindersEnabled}
-              trackColor={{
-                false: Theme.colors.backgroundAlt,
-                true: "#FDE7EE",
-              }}
-              thumbColor={
-                remindersEnabled ? Theme.colors.primary : Theme.colors.white
-              }
-            />
-          </SettingsItem>
-
-          <ItemDivider />
-
-          <SettingsItem>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="notifications-outline"
-                  size={18}
-                  color={Theme.colors.primary}
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel>Notificaciones push</SettingsLabel>
-            </SettingsLeft>
-            <Switch
-              value={pushEnabled}
-              onValueChange={setPushEnabled}
-              trackColor={{
-                false: Theme.colors.backgroundAlt,
-                true: "#FDE7EE",
-              }}
-              thumbColor={
-                pushEnabled ? Theme.colors.primary : Theme.colors.white
-              }
-            />
-          </SettingsItem>
-
-          <ItemDivider />
-
-          <SettingsItem>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="warning-outline"
-                  size={18}
-                  color={Theme.colors.primary}
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel>Alertas de emergencia</SettingsLabel>
-            </SettingsLeft>
-            <Switch
-              value={emergencyEnabled}
-              onValueChange={setEmergencyEnabled}
-              trackColor={{
-                false: Theme.colors.backgroundAlt,
-                true: "#FDE7EE",
-              }}
-              thumbColor={
-                emergencyEnabled ? Theme.colors.primary : Theme.colors.white
-              }
-            />
-          </SettingsItem>
-        </SettingsGroup>
-      </Section>
-      {/* CERRAR SESIÓN */}
-      <Section>
-        <SettingsGroup>
-          <SettingsItem onPress={handleLogout}>
-            <SettingsLeft>
-              <SettingsIconWrapper>
-                <Ionicons
-                  name="log-out-outline"
-                  size={18}
-                  color="#E53E3E"
-                />
-              </SettingsIconWrapper>
-              <SettingsLabel style={{ color: "#E53E3E" }}>Cerrar Sesión</SettingsLabel>
-            </SettingsLeft>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={Theme.colors.textTertiary}
-            />
-          </SettingsItem>
-        </SettingsGroup>
-      </Section>
-
-      {/* PRIVACIDAD Y SOPORTE – opcional, de relleno */}
-      {/* Puedes agregar más items aquí si quieres */}
-    </Container>
-  );
-};
-
-export default Profile;
-
-/* ─────────────── STYLES ─────────────── */
-
-const Container = styled.ScrollView`
-  flex: 1;
-  background-color: ${Theme.colors.backgroundAlt};
-`;
-
-/* HEADER */
+/* ───────────────── Styled Components ───────────────── */
 
 const Header = styled.View`
   background-color: ${Theme.colors.primary};
-  padding: ${Theme.spacing.space5}px ${Theme.spacing.space4}px
-    ${Theme.spacing.space6}px;
+  padding-bottom: ${Theme.spacing.space6}px;
+  padding-horizontal: ${Theme.spacing.space4}px;
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
-`;
-
-const HeaderTopRow = styled.View`
-  height: 24px;
 `;
 
 const AvatarContainer = styled.View`
@@ -373,8 +65,6 @@ const UserEmail = styled.Text`
   margin-top: 4px;
 `;
 
-/* SECTIONS GENERALES */
-
 const Section = styled.View`
   padding: 0 ${Theme.spacing.space4}px;
   margin-top: ${Theme.spacing.space4}px;
@@ -386,8 +76,6 @@ const SectionTitle = styled.Text`
   color: ${Theme.colors.textSecondary};
   margin-bottom: ${Theme.spacing.space2}px;
 `;
-
-/* CARD QR */
 
 const CardQR = styled.View`
   background-color: ${Theme.colors.white};
@@ -425,8 +113,6 @@ const QRPlaceholder = styled.View`
   align-items: center;
 `;
 
-/* INSURANCE CARD */
-
 const InsuranceCard = styled.View`
   border-radius: 20px;
   padding: ${Theme.spacing.space4}px ${Theme.spacing.space4}px;
@@ -462,8 +148,6 @@ const InsuranceDetailValue = styled.Text`
   font-size: ${Theme.typography.fontSizeSm}px;
   color: ${Theme.colors.white};
 `;
-
-/* SETTINGS LIST */
 
 const SettingsGroup = styled.View`
   border-radius: 20px;
@@ -504,3 +188,212 @@ const ItemDivider = styled.View`
   margin-left: ${Theme.spacing.space4}px;
   margin-right: ${Theme.spacing.space4}px;
 `;
+
+/* ───────────────── Component ───────────────── */
+
+const Profile: React.FC = () => {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Cerrar Sesión",
+      "¿Estás seguro que deseas cerrar sesión?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Cerrar Sesión", style: "destructive", onPress: logout },
+      ]
+    );
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* HEADER */}
+        <Header style={{ paddingTop: insets.top + Theme.spacing.space4 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              marginBottom: 10,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Alert" as never)} // FIX
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={Theme.colors.white}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <AvatarContainer>
+            <AvatarCircle>
+              <AvatarInitials>AG</AvatarInitials>
+
+              <AvatarEditBadge>
+                <Ionicons name="pencil" size={14} color={Theme.colors.primary} />
+              </AvatarEditBadge>
+            </AvatarCircle>
+
+            <UserName>Ana García López</UserName>
+            <UserEmail>ana.garcia@example.com</UserEmail>
+          </AvatarContainer>
+        </Header>
+
+        {/* QR SECTION */}
+        <Section>
+          <SectionTitle>Mi Identificación</SectionTitle>
+          <CardQR>
+            <CardQRHeader>
+              <View>
+                <CardQRTitle>Código QR de Paciente</CardQRTitle>
+                <CardQRSubtitle>Escanea para compartir historial</CardQRSubtitle>
+              </View>
+              <Ionicons
+                name="qr-code-outline"
+                size={24}
+                color={Theme.colors.primary}
+              />
+            </CardQRHeader>
+
+            <QRPlaceholder>
+              <Ionicons
+                name="qr-code"
+                size={80}
+                color={Theme.colors.primary}
+                style={{ opacity: 0.5 }}
+              />
+            </QRPlaceholder>
+          </CardQR>
+        </Section>
+
+        {/* INSURANCE */}
+        <Section>
+          <SectionTitle>Seguro Médico</SectionTitle>
+          <InsuranceCard>
+            <InsuranceHeader>
+              <InsuranceTextSmall>Póliza Activa</InsuranceTextSmall>
+              <Ionicons name="shield-checkmark" size={20} color="white" />
+            </InsuranceHeader>
+
+            <InsuranceProvider>Seguros Monterrey</InsuranceProvider>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <View>
+                <InsuranceDetailLabel>Nº de Póliza</InsuranceDetailLabel>
+                <InsuranceDetailValue>GMM-8842-991</InsuranceDetailValue>
+              </View>
+
+              <View>
+                <InsuranceDetailLabel>Vigencia</InsuranceDetailLabel>
+                <InsuranceDetailValue>31 Dic 2025</InsuranceDetailValue>
+              </View>
+            </View>
+          </InsuranceCard>
+        </Section>
+
+        {/* SETTINGS */}
+        <Section>
+          <SectionTitle>Configuración</SectionTitle>
+
+          <SettingsGroup>
+            <SettingsItem>
+              <SettingsLeft>
+                <SettingsIconWrapper>
+                  <Ionicons
+                    name="person-outline"
+                    size={16}
+                    color={Theme.colors.primary}
+                  />
+                </SettingsIconWrapper>
+                <SettingsLabel>Datos Personales</SettingsLabel>
+              </SettingsLeft>
+
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={Theme.colors.textTertiary}
+              />
+            </SettingsItem>
+
+            <ItemDivider />
+
+            <SettingsItem>
+              <SettingsLeft>
+                <SettingsIconWrapper>
+                  <Ionicons
+                    name="notifications-outline"
+                    size={16}
+                    color={Theme.colors.primary}
+                  />
+                </SettingsIconWrapper>
+                <SettingsLabel>Notificaciones</SettingsLabel>
+              </SettingsLeft>
+
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={Theme.colors.textTertiary}
+              />
+            </SettingsItem>
+
+            <ItemDivider />
+
+            <SettingsItem>
+              <SettingsLeft>
+                <SettingsIconWrapper>
+                  <Ionicons
+                    name="lock-closed-outline"
+                    size={16}
+                    color={Theme.colors.primary}
+                  />
+                </SettingsIconWrapper>
+                <SettingsLabel>Privacidad y Seguridad</SettingsLabel>
+              </SettingsLeft>
+
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={Theme.colors.textTertiary}
+              />
+            </SettingsItem>
+          </SettingsGroup>
+        </Section>
+
+        {/* LOGOUT */}
+        <Section>
+          <SettingsGroup>
+            <SettingsItem onPress={handleLogout}>
+              <SettingsLeft>
+                <SettingsIconWrapper style={{ backgroundColor: "#FDE7EE" }}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={16}
+                    color={Theme.colors.warning} // FIX
+                  />
+                </SettingsIconWrapper>
+
+                <SettingsLabel style={{ color: Theme.colors.warning }}>
+                  Cerrar Sesión
+                </SettingsLabel>
+              </SettingsLeft>
+            </SettingsItem>
+          </SettingsGroup>
+        </Section>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </View>
+  );
+};
+
+export default Profile;

@@ -1,410 +1,18 @@
 // screens/MedicalHistory.tsx
 import React, { useRef, useState } from "react";
-import { TextInput } from "react-native";
+import { TextInput, TouchableOpacity, View, Text, ScrollView } from "react-native";
 import styled from "styled-components/native";
-import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import api from "../api/api";
-import { useFocusEffect } from "@react-navigation/native";
-
-const MOCK_CONSULTATIONS = [
-  {
-    id: "1",
-    type: "Consulta General",
-    date: "15/11/2024",
-    doctor: "Dr. Carlos Méndez",
-    diagnosis: "Control de hipertensión y diabetes",
-    treatment:
-      "Ajuste de dosis de Losartán a 100mg. Mantener Metformina.",
-    notes: "Presión arterial: 135/85. Glucosa en ayunas: 110 mg/dL",
-  },
-  {
-    id: "2",
-    type: "Consulta Especialista",
-    date: "03/10/2024",
-    doctor: "Dra. Ana Torres - Endocrinología",
-    diagnosis: "Seguimiento diabetes tipo 2",
-    treatment: "Continuar con Metformina 500mg 2 veces al día.",
-    notes: "HbA1c: 6.8%. Paciente muestra buen control glucémico.",
-  },
-  {
-    id: "3",
-    type: "Urgencias",
-    date: "12/08/2024",
-    doctor: "Dr. Miguel Ángel Ruiz",
-    diagnosis: "Crisis hipertensiva",
-    treatment:
-      "Administración de antihipertensivo IV. Observación 4 horas.",
-    notes: "PA al ingreso: 180/100. PA al alta: 140/85",
-  },
-];
-
-const PIN_LENGTH = 6;
-const HARDCODED_PIN = "123456"; // Add this line
-
-const MedicalHistory: React.FC = () => {
-  const navigation = useNavigation<any>();
-
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [pin, setPin] = useState("");
-  const [showPin, setShowPin] = useState(false);
-  const hiddenInputRef = useRef<TextInput | null>(null);
-
-  // Patient data state
-  const [patientData, setPatientData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchPatientData = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/user/profile');
-      const profile = response.data.patientProfile;
-      setPatientData(profile);
-    } catch (error) {
-      console.log("Error fetching patient data", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchPatientData();
-    }, [])
-  );
-
-  const calculateAge = (dob: string) => {
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const handleBack = () => {
-    navigation.goBack();
-  };
-
-  const handleChangePin = (value: string) => {
-    const clean = value.replace(/[^0-9]/g, "").slice(0, PIN_LENGTH);
-    setPin(clean);
-  };
-
-  const handleUnlock = () => {
-    if (pin.length === PIN_LENGTH) {
-      // Check if entered PIN matches hardcoded PIN
-      if (pin === HARDCODED_PIN) {
-        setIsUnlocked(true);
-      } else {
-        // Optional: You can add an alert or error message here
-        console.log("Incorrect PIN");
-        // Reset PIN on wrong entry
-        setPin("");
-      }
-    }
-  };
-
-  const handleLock = () => {
-    setIsUnlocked(false);
-    setPin("");
-  };
-
-  const handleToggleShowPin = () => {
-    setShowPin((prev) => !prev);
-  };
-
-  const handleFocusBoxes = () => {
-    hiddenInputRef.current?.focus();
-  };
-
-  return (
-    <Container>
-      <Scroll
-        contentContainerStyle={{
-          paddingBottom: Theme.spacing.space10,
-        }}
-      >
-        {/* HEADER */}
-        <Header>
-          <HeaderLeft onPress={handleBack}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color={Theme.colors.textPrimary}
-            />
-          </HeaderLeft>
-
-          <HeaderCenter>
-            <HeaderTitle>Historial Médico</HeaderTitle>
-            {isUnlocked && (
-              <StatusRow>
-                <StatusDot />
-                <StatusText>Desbloqueado</StatusText>
-              </StatusRow>
-            )}
-          </HeaderCenter>
-
-          <HeaderRight onPress={isUnlocked ? handleLock : undefined}>
-            {isUnlocked && (
-              <>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={18}
-                  color={Theme.colors.textPrimary}
-                />
-                <HeaderRightText>Bloquear</HeaderRightText>
-              </>
-            )}
-          </HeaderRight>
-        </Header>
-
-        {/* TARJETA DE SEGURO MÉDICO */}
-        <InsuranceCard>
-          <InsuranceTopRow>
-            <InsuranceTitle>Seguro Médico</InsuranceTitle>
-            <InsuranceIconWrapper>
-              <Ionicons
-                name="card-outline"
-                size={22}
-                color={Theme.colors.white}
-              />
-            </InsuranceIconWrapper>
-          </InsuranceTopRow>
-
-          <InsuranceProvider>{patientData?.hasInsurance ? patientData.insuranceProvider || "Proveedor no especificado" : "Sin seguro médico"}</InsuranceProvider>
-
-          {patientData?.hasInsurance && (
-            <>
-              <InsuranceFieldLabel>Número de póliza</InsuranceFieldLabel>
-              <InsuranceFieldValue>No disponible</InsuranceFieldValue>
-
-              <InsuranceFieldLabel>Válida hasta</InsuranceFieldLabel>
-              <InsuranceFieldValue>No disponible</InsuranceFieldValue>
-            </>
-          )}
-        </InsuranceCard>
-
-        {/* CONTENIDO BLOQUEADO vs DESBLOQUEADO */}
-        {!isUnlocked ? (
-          <>
-            {/* CARD DE PIN / PROTECCIÓN */}
-            <LockCard>
-              <LockIconCircle>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={30}
-                  color={Theme.colors.primary}
-                />
-              </LockIconCircle>
-
-              <LockTitle>Información Protegida</LockTitle>
-              <LockDescription>
-                Tu historial médico está encriptado.{"\n"}
-                Ingresa tu código de 6 dígitos para desbloquear.
-              </LockDescription>
-
-              {/* INPUT OCULTO */}
-              <HiddenInput
-                ref={hiddenInputRef}
-                keyboardType="number-pad"
-                value={pin}
-                onChangeText={handleChangePin}
-                maxLength={PIN_LENGTH}
-                autoFocus
-              />
-
-              {/* CAJITAS DE CÓDIGO */}
-              <CodeBoxesContainer onPress={handleFocusBoxes} activeOpacity={1}>
-                {Array.from({ length: PIN_LENGTH }).map((_, index) => {
-                  const char = pin[index] ?? "";
-                  return (
-                    <CodeBox key={index} isFilled={!!char}>
-                      <CodeChar>
-                        {char
-                          ? showPin
-                            ? char
-                            : "•"
-                          : ""}
-                      </CodeChar>
-                    </CodeBox>
-                  );
-                })}
-              </CodeBoxesContainer>
-
-              {/* Mostrar/Ocultar */}
-              <ShowCodeRow onPress={handleToggleShowPin}>
-                <Ionicons
-                  name={showPin ? "eye-off-outline" : "eye-outline"}
-                  size={18}
-                  color={Theme.colors.textSecondary}
-                />
-                <ShowCodeText>
-                  {showPin ? "Ocultar código" : "Mostrar código"}
-                </ShowCodeText>
-              </ShowCodeRow>
-
-              {/* Botón desbloquear */}
-              <UnlockButton
-                disabled={pin.length !== PIN_LENGTH}
-                onPress={handleUnlock}
-              >
-                <UnlockButtonText>Desbloquear Historial</UnlockButtonText>
-              </UnlockButton>
-
-              {/* Recuperar acceso */}
-              <RecoverRow>
-                <RecoverText>¿Olvidaste tu código? </RecoverText>
-                <RecoverLink>Recuperar acceso</RecoverLink>
-              </RecoverRow>
-            </LockCard>
-
-            {/* CARD DE SEGURIDAD DE DATOS */}
-            <InfoCard>
-              <InfoIconWrapper>
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={20}
-                  color={Theme.colors.info}
-                />
-              </InfoIconWrapper>
-              <InfoTextContainer>
-                <InfoTitle>Seguridad de datos</InfoTitle>
-                <InfoBody>
-                  Tu información médica está encriptada de extremo a extremo.
-                  Solo tú y los médicos autorizados pueden acceder a ella.
-                </InfoBody>
-              </InfoTextContainer>
-            </InfoCard>
-          </>
-        ) : (
-          <>
-            {/* RESUMEN DEL PACIENTE */}
-            <PatientCard>
-              <PatientName>{patientData ? `${patientData.firstName} ${patientData.lastName}` : "Cargando..."}</PatientName>
-              <PatientSubtitle>
-                {patientData ? `${calculateAge(patientData.dob)} años • ${patientData.gender === 'M' ? 'Masculino' : patientData.gender === 'F' ? 'Femenino' : 'Otro'} • Grupo: O+` : ""}
-              </PatientSubtitle>
-
-              <PatientRow>
-                <PatientColumn>
-                  <PatientSectionLabel>Condiciones crónicas</PatientSectionLabel>
-                  <ChipsRow>
-                    {patientData?.chronicDiseases?.length > 0 ? patientData.chronicDiseases.map((c: string) => (
-                      <ConditionChip key={c}>
-                        <ConditionText>{c}</ConditionText>
-                      </ConditionChip>
-                    )) : <ConditionText>Ninguna</ConditionText>}
-                  </ChipsRow>
-                </PatientColumn>
-
-                <PatientColumn>
-                  <PatientSectionLabel>Alergias</PatientSectionLabel>
-                  <ChipsRow>
-                    {patientData?.allergies ? (
-                      <AllergyChip>
-                        <Ionicons
-                          name="alert-circle-outline"
-                          size={14}
-                          color={Theme.colors.warning}
-                          style={{ marginRight: 4 }}
-                        />
-                        <AllergyText>{patientData.allergies}</AllergyText>
-                      </AllergyChip>
-                    ) : <AllergyText>Ninguna</AllergyText>}
-                  </ChipsRow>
-                </PatientColumn>
-              </PatientRow>
-
-              <SectionDivider />
-            </PatientCard>
-
-            {/* HISTORIAL DE CONSULTAS */}
-            <SectionTitle>Historial de Consultas</SectionTitle>
-
-            {MOCK_CONSULTATIONS.map((c) => (
-              <ConsultationCard key={c.id}>
-                <ConsultationHeader>
-                  <ConsultationIconCircle>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={20}
-                      color={Theme.colors.primary}
-                    />
-                  </ConsultationIconCircle>
-                  <ConsultationHeaderText>
-                    <ConsultationType>{c.type}</ConsultationType>
-                    <ConsultationDate>{c.date}</ConsultationDate>
-                  </ConsultationHeaderText>
-                </ConsultationHeader>
-
-                <ConsultationFieldLabel>Médico</ConsultationFieldLabel>
-                <ConsultationFieldValue>{c.doctor}</ConsultationFieldValue>
-
-                <ConsultationFieldLabel>Diagnóstico</ConsultationFieldLabel>
-                <ConsultationFieldValue>{c.diagnosis}</ConsultationFieldValue>
-
-                <ConsultationFieldLabel>Tratamiento</ConsultationFieldLabel>
-                <ConsultationFieldValue>{c.treatment}</ConsultationFieldValue>
-
-                <ConsultationFieldLabel>Notas</ConsultationFieldLabel>
-                <ConsultationNotes>{c.notes}</ConsultationNotes>
-              </ConsultationCard>
-            ))}
-
-            {/* INFO ACCESO MÉDICO */}
-            <InfoCard>
-              <InfoIconWrapper>
-                <Ionicons
-                  name="medkit-outline"
-                  size={20}
-                  color={Theme.colors.info}
-                />
-              </InfoIconWrapper>
-              <InfoTextContainer>
-                <InfoTitle>Acceso médico</InfoTitle>
-                <InfoBody>
-                  Los médicos autorizados pueden ver y actualizar tu historial
-                  durante las consultas.
-                </InfoBody>
-              </InfoTextContainer>
-            </InfoCard>
-          </>
-        )}
-      </Scroll>
-    </Container>
-  );
-};
-
-export default MedicalHistory;
-
-/* ─────────────── STYLES ─────────────── */
-
-const Container = styled.View`
-  flex: 1;
-  background-color: ${Theme.colors.background};
-`;
-
-const Scroll = styled.ScrollView`
-  flex: 1;
-`;
-
-/* HEADER */
+import { Theme } from "../components/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Header = styled.View`
   flex-direction: row;
   align-items: center;
   padding: ${Theme.spacing.space4}px;
-  padding-top: ${Theme.spacing.space5}px;
   border-bottom-width: 1px;
   border-bottom-color: ${Theme.colors.border};
-`;
-
-const HeaderLeft = styled.TouchableOpacity`
-  padding-right: ${Theme.spacing.space2}px;
 `;
 
 const HeaderCenter = styled.View`
@@ -791,3 +399,292 @@ const ConsultationNotes = styled.Text`
   padding: ${Theme.spacing.space2}px;
   border-radius: 12px;
 `;
+
+const MedicalHistory: React.FC = () => {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const [isLocked, setIsLocked] = useState(true);
+  const [code, setCode] = useState(["", "", "", ""]);
+  const [isCodeVisible, setIsCodeVisible] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  const handleCodeChange = (text: string) => {
+    // Limitar a números
+    const numericText = text.replace(/[^0-9]/g, "");
+    const newCode = numericText.split("").slice(0, 4);
+    // Rellenar con vacíos si es necesario
+    while (newCode.length < 4) {
+      newCode.push("");
+    }
+    setCode(newCode);
+
+    // Auto-unlock si es correcto (ejemplo 1234)
+    if (numericText === "1234") {
+      setTimeout(() => {
+        setIsLocked(false);
+      }, 300);
+    }
+  };
+
+  const handleUnlock = () => {
+    // Lógica manual
+    if (code.join("") === "1234") {
+      setIsLocked(false);
+    } else {
+      alert("Código incorrecto (prueba 1234)");
+    }
+  };
+
+  const codeValue = code.join("");
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+      {/* HEADER */}
+      <Header style={{ paddingTop: insets.top + Theme.spacing.space4 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={Theme.colors.textPrimary}
+          />
+        </TouchableOpacity>
+        <HeaderCenter>
+          <View style={{ alignItems: "center" }}>
+            <HeaderTitle>Historial Médico</HeaderTitle>
+            <StatusRow>
+              <StatusDot />
+              <StatusText>Actualizado hoy</StatusText>
+            </StatusRow>
+          </View>
+        </HeaderCenter>
+        <HeaderRight>
+          <Ionicons
+            name="share-outline"
+            size={22}
+            color={Theme.colors.primary}
+          />
+          <HeaderRightText>Exportar</HeaderRightText>
+        </HeaderRight>
+      </Header>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* INSURANCE CARD */}
+        <InsuranceCard>
+          <InsuranceTopRow>
+            <InsuranceTitle>Seguro Médico</InsuranceTitle>
+            <InsuranceIconWrapper>
+              <Ionicons name="shield-checkmark" size={20} color="white" />
+            </InsuranceIconWrapper>
+          </InsuranceTopRow>
+
+          <InsuranceProvider>Seguros Monterrey</InsuranceProvider>
+
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View>
+              <InsuranceFieldLabel>Póliza</InsuranceFieldLabel>
+              <InsuranceFieldValue>GMM-8842-991</InsuranceFieldValue>
+            </View>
+            <View>
+              <InsuranceFieldLabel>Vigencia</InsuranceFieldLabel>
+              <InsuranceFieldValue>Dic 2025</InsuranceFieldValue>
+            </View>
+          </View>
+        </InsuranceCard>
+
+        {isLocked ? (
+          /* LOCKED VIEW */
+          <View>
+            <LockCard>
+              <LockIconCircle>
+                <Ionicons name="lock-closed" size={32} color={Theme.colors.primary} />
+              </LockIconCircle>
+              <LockTitle>Información Protegida</LockTitle>
+              <LockDescription>
+                Ingresa tu código de acceso para ver el historial clínico completo.
+              </LockDescription>
+
+              {/* CODE INPUT */}
+              <CodeBoxesContainer onPress={() => inputRef.current?.focus()}>
+                {code.map((digit, index) => (
+                  <CodeBox key={index} isFilled={!!digit}>
+                    <CodeChar>
+                      {digit ? (isCodeVisible ? digit : "•") : ""}
+                    </CodeChar>
+                  </CodeBox>
+                ))}
+              </CodeBoxesContainer>
+
+              <HiddenInput
+                ref={inputRef}
+                value={codeValue}
+                onChangeText={handleCodeChange}
+                keyboardType="number-pad"
+                maxLength={4}
+                caretHidden
+              />
+
+              <ShowCodeRow onPress={() => setIsCodeVisible(!isCodeVisible)}>
+                <Ionicons
+                  name={isCodeVisible ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={Theme.colors.textSecondary}
+                />
+                <ShowCodeText>
+                  {isCodeVisible ? "Ocultar código" : "Mostrar código"}
+                </ShowCodeText>
+              </ShowCodeRow>
+
+              <UnlockButton
+                disabled={codeValue.length < 4}
+                onPress={handleUnlock}
+              >
+                <UnlockButtonText>Desbloquear</UnlockButtonText>
+              </UnlockButton>
+
+              <RecoverRow>
+                <RecoverText>¿Olvidaste tu código? </RecoverText>
+                <TouchableOpacity>
+                  <RecoverLink>Recuperar</RecoverLink>
+                </TouchableOpacity>
+              </RecoverRow>
+            </LockCard>
+
+            <InfoCard>
+              <View style={{ flexDirection: "row" }}>
+                <InfoIconWrapper>
+                  <Ionicons
+                    name="information-circle"
+                    size={24}
+                    color={Theme.colors.primary}
+                  />
+                </InfoIconWrapper>
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                  <InfoTitle>Acceso de Emergencia</InfoTitle>
+                  <InfoBody>
+                    Los médicos autorizados pueden solicitar acceso temporal
+                    escaneando tu código QR de perfil.
+                  </InfoBody>
+                </View>
+              </View>
+            </InfoCard>
+          </View>
+        ) : (
+          /* UNLOCKED VIEW */
+          <View>
+            <PatientCard>
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <View>
+                  <PatientName>Ana García López</PatientName>
+                  <PatientSubtitle>24 años • O+</PatientSubtitle>
+                </View>
+                <TouchableOpacity onPress={() => setIsLocked(true)}>
+                  <Ionicons
+                    name="lock-open-outline"
+                    size={24}
+                    color={Theme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <PatientRow>
+                <PatientColumn>
+                  <PatientSectionLabel>Condiciones</PatientSectionLabel>
+                  <ChipsRow>
+                    <ConditionChip>
+                      <ConditionText>Asma Leve</ConditionText>
+                    </ConditionChip>
+                    <ConditionChip>
+                      <ConditionText>Miopía</ConditionText>
+                    </ConditionChip>
+                  </ChipsRow>
+                </PatientColumn>
+              </PatientRow>
+
+              <PatientRow>
+                <PatientColumn>
+                  <PatientSectionLabel>Alergias</PatientSectionLabel>
+                  <ChipsRow>
+                    <AllergyChip>
+                      <Ionicons
+                        name="alert-circle"
+                        size={14}
+                        color={Theme.colors.warning}
+                        style={{ marginRight: 4 }}
+                      />
+                      <AllergyText>Penicilina</AllergyText>
+                    </AllergyChip>
+                    <AllergyChip>
+                      <Ionicons
+                        name="alert-circle"
+                        size={14}
+                        color={Theme.colors.warning}
+                        style={{ marginRight: 4 }}
+                      />
+                      <AllergyText>Polen</AllergyText>
+                    </AllergyChip>
+                  </ChipsRow>
+                </PatientColumn>
+              </PatientRow>
+
+              <SectionDivider />
+
+              <PatientRow>
+                <PatientColumn>
+                  <PatientSectionLabel>Medicamentos Activos</PatientSectionLabel>
+                  <View style={{ marginTop: 4 }}>
+                    <Text style={{ fontSize: 14, color: Theme.colors.textPrimary, marginBottom: 4 }}>
+                      • Salbutamol (Inhalador) - Si es necesario
+                    </Text>
+                    <Text style={{ fontSize: 14, color: Theme.colors.textPrimary }}>
+                      • Loratadina - 10mg diarios
+                    </Text>
+                  </View>
+                </PatientColumn>
+              </PatientRow>
+            </PatientCard>
+
+            <SectionTitle>Consultas Recientes</SectionTitle>
+
+            <ConsultationCard>
+              <ConsultationHeader>
+                <ConsultationIconCircle>
+                  <Ionicons name="medkit" size={20} color={Theme.colors.primary} />
+                </ConsultationIconCircle>
+                <ConsultationHeaderText>
+                  <ConsultationType>Medicina General</ConsultationType>
+                  <ConsultationDate>10 Nov 2023 • Dr. Roberto Silva</ConsultationDate>
+                </ConsultationHeaderText>
+              </ConsultationHeader>
+              <ConsultationFieldLabel>Diagnóstico</ConsultationFieldLabel>
+              <ConsultationFieldValue>Infección respiratoria leve</ConsultationFieldValue>
+              <ConsultationFieldLabel>Notas</ConsultationFieldLabel>
+              <ConsultationNotes>
+                Paciente presenta tos y congestión. Se receta descanso y líquidos.
+              </ConsultationNotes>
+            </ConsultationCard>
+
+            <ConsultationCard>
+              <ConsultationHeader>
+                <ConsultationIconCircle>
+                  <Ionicons name="eye" size={20} color={Theme.colors.primary} />
+                </ConsultationIconCircle>
+                <ConsultationHeaderText>
+                  <ConsultationType>Oftalmología</ConsultationType>
+                  <ConsultationDate>25 Oct 2023 • Dra. Elena Torres</ConsultationDate>
+                </ConsultationHeaderText>
+              </ConsultationHeader>
+              <ConsultationFieldLabel>Diagnóstico</ConsultationFieldLabel>
+              <ConsultationFieldValue>Revisión anual de miopía</ConsultationFieldValue>
+              <ConsultationFieldLabel>Notas</ConsultationFieldLabel>
+              <ConsultationNotes>
+                Aumento ligero en graduación ojo izquierdo. Se actualizan lentes.
+              </ConsultationNotes>
+            </ConsultationCard>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+export default MedicalHistory;

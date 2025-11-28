@@ -6,9 +6,11 @@ import { Theme } from "../components/colors";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import api from "../api/api";
 import { useNotification } from "../context/NotificationContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Home: React.FC = () => {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { showNotification } = useNotification();
   const [userName, setUserName] = React.useState("Usuario");
   const [initials, setInitials] = React.useState("U");
@@ -53,7 +55,7 @@ const Home: React.FC = () => {
         }}
       >
         {/* HEADER ROJO */}
-        <Header>
+        <Header style={{ paddingTop: insets.top + Theme.spacing.space4 }}>
           <HeaderTopRow>
             <GreetingWrapper>
               <GreetingSmall>Hola,</GreetingSmall>
@@ -85,7 +87,7 @@ const Home: React.FC = () => {
           </SectionHeader>
 
           <QuickAccessGrid>
-            <QuickCard>
+            <QuickCard onPress={() => navigation.navigate("MedicalHistory")}>
               <QuickCardIcon>
                 <Ionicons
                   name="document-text-outline"
@@ -96,7 +98,7 @@ const Home: React.FC = () => {
               <QuickCardLabel>Historial Médico</QuickCardLabel>
             </QuickCard>
 
-            <QuickCard>
+            <QuickCard onPress={() => navigation.navigate("Citas")}>
               <QuickCardIcon>
                 <Ionicons
                   name="calendar-outline"
@@ -107,7 +109,7 @@ const Home: React.FC = () => {
               <QuickCardLabel>Agendar Cita</QuickCardLabel>
             </QuickCard>
 
-            <QuickCard>
+            <QuickCard onPress={() => navigation.navigate("Diario")}>
               <QuickCardIcon>
                 <Ionicons
                   name="book-outline"
@@ -239,7 +241,6 @@ const ContentScroll = styled.ScrollView`
 const Header = styled.View`
   background-color: ${Theme.colors.primary};
   padding: ${Theme.spacing.space4}px;
-  padding-top: ${Theme.spacing.space12}px;
   border-bottom-left-radius: 24px;
   border-bottom-right-radius: 24px;
 `;
@@ -337,7 +338,7 @@ const QuickAccessGrid = styled.View`
   justify-content: space-between;
 `;
 
-const QuickCard = styled.View`
+const QuickCard = styled.TouchableOpacity`
   width: 30%;
   background-color: ${Theme.colors.primary};
   border-radius: 16px;

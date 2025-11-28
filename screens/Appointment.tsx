@@ -24,7 +24,7 @@ const Appointment: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>("upcoming");
     const { showNotification } = useNotification();
 
-    // Multi-step scheduling state
+    // Multi-step scheduling
     const [schedulingStep, setSchedulingStep] = useState<number>(0);
     const [appointmentData, setAppointmentData] = useState<{
         service: AppointmentService | null;
@@ -45,7 +45,6 @@ const Appointment: React.FC = () => {
     });
 
     const [appointments, setAppointments] = useState<AppointmentType[]>([
-        // Mock data - upcoming appointments
         {
             id: "1",
             service: "psychology",
@@ -66,7 +65,6 @@ const Appointment: React.FC = () => {
             location: "Kiosco Facultad Ciencias",
             status: "scheduled",
         },
-        // Mock data - past appointment
         {
             id: "3",
             service: "nutrition",
@@ -85,53 +83,57 @@ const Appointment: React.FC = () => {
         return appointmentDate >= now && appointment.status === "scheduled";
     };
 
-    const upcomingAppointments = useMemo(() => {
-        return appointments
-            .filter(isUpcoming)
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }, [appointments]);
+    const upcomingAppointments = useMemo(
+        () =>
+            appointments
+                .filter(isUpcoming)
+                .sort(
+                    (a, b) =>
+                        new Date(a.date).getTime() -
+                        new Date(b.date).getTime()
+                ),
+        [appointments]
+    );
 
-    const pastAppointments = useMemo(() => {
-        return appointments
-            .filter((apt) => !isUpcoming(apt))
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [appointments]);
+    const pastAppointments = useMemo(
+        () =>
+            appointments
+                .filter((apt) => !isUpcoming(apt))
+                .sort(
+                    (a, b) =>
+                        new Date(b.date).getTime() -
+                        new Date(a.date).getTime()
+                ),
+        [appointments]
+    );
 
-    // Step 0 → Step 1: Open service selection
-    const handleNewAppointment = () => {
-        setSchedulingStep(1);
-    };
+    const handleNewAppointment = () => setSchedulingStep(1);
 
-    // Step 1 → Step 2: Service selected, go to kiosk/professional selection
     const handleServiceSelect = (service: AppointmentService) => {
         setAppointmentData((prev) => ({ ...prev, service }));
         setSchedulingStep(2);
     };
 
-    // Step 2 → Step 3: Professional selected, go to date/time selection
     const handleProfessionalSelect = (kiosk: Kiosk, professional: Professional) => {
         setAppointmentData((prev) => ({ ...prev, kiosk, professional }));
         setSchedulingStep(3);
     };
 
-    // Step 3 → Step 4: Date/time selected, go to confirmation
     const handleDateTimeSelect = (date: Date, time: string) => {
         setAppointmentData((prev) => ({ ...prev, date, time }));
         setSchedulingStep(4);
     };
 
-    // Step 4 → Step 5: Confirmed, go to success
     const handleConfirm = (notes: string, emailReminder: boolean) => {
         setAppointmentData((prev) => ({ ...prev, notes, emailReminder }));
 
-        // Create new appointment
         const newAppointment: AppointmentType = {
             id: Date.now().toString(),
             service: appointmentData.service!,
             doctorName: appointmentData.professional!.name,
             date: appointmentData.date!.toISOString(),
             startTime: appointmentData.time!,
-            endTime: "", // Could calculate based on service duration
+            endTime: "",
             location: appointmentData.kiosk!.name,
             status: "scheduled",
         };
@@ -140,7 +142,6 @@ const Appointment: React.FC = () => {
         setSchedulingStep(5);
     };
 
-    // Step 5 → Step 0: Close success and reset
     const handleCloseSuccess = () => {
         setSchedulingStep(0);
         setAppointmentData({
@@ -154,33 +155,12 @@ const Appointment: React.FC = () => {
         });
     };
 
-    const handleAddToCalendar = () => {
-        // TODO: Implement calendar integration
-        console.log("Add to calendar");
-    };
-
-    // Close any modal (back button)
     const handleCloseModal = () => {
-        if (schedulingStep > 1) {
-            setSchedulingStep(schedulingStep - 1);
-        } else {
-            setSchedulingStep(0);
-        }
+        if (schedulingStep > 1) setSchedulingStep(schedulingStep - 1);
+        else setSchedulingStep(0);
     };
 
-    const handleReschedule = (appointmentId: string) => {
-        console.log("Reschedule appointment:", appointmentId);
-        // TODO: Implement reschedule logic
-    };
-
-    const handleCancel = (appointmentId: string) => {
-        console.log("Cancel appointment:", appointmentId);
-        // TODO: Implement cancel logic
-    };
-
-    const handleFilterPress = () => {
-        // TODO: Implement filter functionality
-    };
+    const handleFilterPress = () => { };
 
     const displayedAppointments =
         activeTab === "upcoming" ? upcomingAppointments : pastAppointments;
@@ -189,14 +169,13 @@ const Appointment: React.FC = () => {
         <Container>
             <ContentScroll
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                    paddingBottom: Theme.spacing.space10,
-                }}
+                contentContainerStyle={{ paddingBottom: Theme.spacing.space10 }}
             >
-                {/* Header */}
+                {/* HEADER (fixed spacing) */}
                 <Header>
                     <HeaderTitle>Mis Citas</HeaderTitle>
-                    <HeaderIconButton onPress={handleFilterPress} activeOpacity={0.7}>
+
+                    <HeaderIconButton activeOpacity={0.7} onPress={handleFilterPress}>
                         <Ionicons
                             name="funnel-outline"
                             size={22}
@@ -205,11 +184,8 @@ const Appointment: React.FC = () => {
                     </HeaderIconButton>
                 </Header>
 
-                {/* Agendar Nueva Cita Button */}
-                <NewAppointmentButton
-                    activeOpacity={0.9}
-                    onPress={handleNewAppointment}
-                >
+                {/* New appointment */}
+                <NewAppointmentButton onPress={handleNewAppointment} activeOpacity={0.9}>
                     <Ionicons
                         name="add"
                         size={20}
@@ -224,7 +200,6 @@ const Appointment: React.FC = () => {
                     <TabButton
                         active={activeTab === "upcoming"}
                         onPress={() => setActiveTab("upcoming")}
-                        activeOpacity={0.7}
                     >
                         <TabText active={activeTab === "upcoming"}>Próximas</TabText>
                     </TabButton>
@@ -232,13 +207,12 @@ const Appointment: React.FC = () => {
                     <TabButton
                         active={activeTab === "past"}
                         onPress={() => setActiveTab("past")}
-                        activeOpacity={0.7}
                     >
                         <TabText active={activeTab === "past"}>Pasadas</TabText>
                     </TabButton>
                 </TabsContainer>
 
-                {/* Test Notification Button */}
+                {/* Notification test */}
                 <TouchableOpacity
                     style={{
                         marginHorizontal: 16,
@@ -255,7 +229,7 @@ const Appointment: React.FC = () => {
                     </Text>
                 </TouchableOpacity>
 
-                {/* Appointments List */}
+                {/* Appointment list */}
                 <AppointmentsContainer>
                     {displayedAppointments.length > 0 ? (
                         displayedAppointments.map((appointment) => (
@@ -264,12 +238,12 @@ const Appointment: React.FC = () => {
                                 appointment={appointment}
                                 onReschedule={
                                     activeTab === "upcoming"
-                                        ? () => handleReschedule(appointment.id)
+                                        ? () => console.log("reschedule", appointment.id)
                                         : undefined
                                 }
                                 onCancel={
                                     activeTab === "upcoming"
-                                        ? () => handleCancel(appointment.id)
+                                        ? () => console.log("cancel", appointment.id)
                                         : undefined
                                 }
                             />
@@ -293,14 +267,13 @@ const Appointment: React.FC = () => {
                 </AppointmentsContainer>
             </ContentScroll>
 
-            {/* Step 1: Service Selection Modal */}
+            {/* Modals */}
             <AppointmentServiceModal
                 visible={schedulingStep === 1}
                 onClose={handleCloseModal}
                 onServiceSelect={handleServiceSelect}
             />
 
-            {/* Step 2: Kiosk/Professional Selection Modal */}
             <AppointmentKioskModal
                 visible={schedulingStep === 2}
                 service={appointmentData.service}
@@ -308,14 +281,12 @@ const Appointment: React.FC = () => {
                 onProfessionalSelect={handleProfessionalSelect}
             />
 
-            {/* Step 3: Date/Time Selection Modal */}
             <AppointmentDateTimeModal
                 visible={schedulingStep === 3}
                 onClose={handleCloseModal}
                 onDateTimeSelect={handleDateTimeSelect}
             />
 
-            {/* Step 4: Confirmation Modal */}
             <AppointmentConfirmationModal
                 visible={schedulingStep === 4}
                 service={appointmentData.service}
@@ -327,7 +298,6 @@ const Appointment: React.FC = () => {
                 onConfirm={handleConfirm}
             />
 
-            {/* Step 5: Success Modal */}
             <AppointmentSuccessModal
                 visible={schedulingStep === 5}
                 service={appointmentData.service}
@@ -336,7 +306,7 @@ const Appointment: React.FC = () => {
                 time={appointmentData.time}
                 location={appointmentData.kiosk?.name || ""}
                 onClose={handleCloseSuccess}
-                onAddToCalendar={handleAddToCalendar}
+                onAddToCalendar={() => console.log("Add to calendar")}
             />
         </Container>
     );
@@ -344,7 +314,7 @@ const Appointment: React.FC = () => {
 
 export default Appointment;
 
-/* ─────────────── STYLES ─────────────── */
+/* ---------------- STYLES ---------------- */
 
 const Container = styled.View`
   flex: 1;
@@ -355,8 +325,9 @@ const ContentScroll = styled.ScrollView`
   flex: 1;
 `;
 
+/* ↓↓↓ FIXED header with lowered title ↓↓↓ */
 const Header = styled.View`
-  padding: ${Theme.spacing.space4}px ${Theme.spacing.space4}px 0;
+  padding: 48px 16px 10px; /* top / left-right / bottom */
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -366,6 +337,7 @@ const HeaderTitle = styled.Text`
   font-size: ${Theme.typography.fontSizeLg}px;
   font-weight: 600;
   color: ${Theme.colors.textPrimary};
+  margin-top: 4px; /* subtle downward push */
 `;
 
 const HeaderIconButton = styled.TouchableOpacity`
