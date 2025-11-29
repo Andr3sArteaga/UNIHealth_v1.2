@@ -4,6 +4,9 @@ import styled from "styled-components/native";
 import { Theme } from "../components/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../context/AuthContext";
+
 
 type Slide = {
   key: string;
@@ -38,22 +41,44 @@ const slides: Slide[] = [
 
 const Tutorial: React.FC = () => {
   const navigation = useNavigation<any>();
+  const { login } = useAuth();
   const [index, setIndex] = useState(0);
 
   const currentSlide = slides[index];
   const isLast = index === slides.length - 1;
 
-  const handlePrimary = () => {
+  const handlePrimary = async () => {
     if (!isLast) {
       setIndex((prev) => prev + 1);
     } else {
-      // destino final después del tutorial
-      // Navigation handled automatically by AuthContext
+      // Mark tutorial as completed and trigger authentication
+      try {
+        await AsyncStorage.setItem('tutorialCompleted', 'true');
+        // Get the existing access token and use it to trigger auth state change
+        const token = await AsyncStorage.getItem('access_token');
+        if (token) {
+          // Store it as userToken so AuthContext recognizes it
+          await login(token);
+        }
+      } catch (error) {
+        console.error('Error completing tutorial:', error);
+      }
     }
   };
 
-  const handleSkip = () => {
-    // Navigation handled automatically by AuthContext 
+  const handleSkip = async () => {
+    // Mark tutorial as completed and trigger authentication
+    try {
+      await AsyncStorage.setItem('tutorialCompleted', 'true');
+      // Get the existing access token and use it to trigger auth state change
+      const token = await AsyncStorage.getItem('access_token');
+      if (token) {
+        // Store it as userToken so AuthContext recognizes it
+        await login(token);
+      }
+    } catch (error) {
+      console.error('Error skipping tutorial:', error);
+    }
   };
 
   return (
@@ -255,5 +280,5 @@ const SkipText = styled.Text`
   color: ${Theme.colors.textSecondary};
   text-align: center;
 `;
- 
+
 

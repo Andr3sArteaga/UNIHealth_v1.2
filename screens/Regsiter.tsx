@@ -55,7 +55,7 @@ const Register: React.FC = () => {
     maritalStatus: "",
     // Step 2
     chronicDiseases: [],
-    medicationName: "",
+    medications: [],
     allergies: "",
     surgeries: "",
     hasDisability: false,
@@ -175,7 +175,7 @@ const Register: React.FC = () => {
         email: form.email,
         password: form.password,
         name: form.fullName,
-    });
+      });
 
 
       // 2. Login to get token
@@ -183,7 +183,7 @@ const Register: React.FC = () => {
         email: form.email,
         password: form.password,
       });
-      
+
       const { access_token } = loginResponse.data;
       await AsyncStorage.setItem('access_token', access_token);
 
@@ -217,7 +217,7 @@ const Register: React.FC = () => {
       if (isTimeout) {
         alert(
           'La solicitud tardó demasiado (timeout). Verifica que el servidor esté levantado y que tu dispositivo/emulador pueda acceder a la URL de backend.' +
-            '\n\nSugerencias:\n• Asegúrate de que `BASE_URL` en api/api.ts use la IP de tu máquina (no localhost) cuando pruebas en dispositivo físico.\n• Revisa que el servidor esté corriendo en el puerto correcto y en la misma red.'
+          '\n\nSugerencias:\n• Asegúrate de que `BASE_URL` en api/api.ts use la IP de tu máquina (no localhost) cuando pruebas en dispositivo físico.\n• Revisa que el servidor esté corriendo en el puerto correcto y en la misma red.'
         );
       } else if (error?.response) {
         // Server returned an error response

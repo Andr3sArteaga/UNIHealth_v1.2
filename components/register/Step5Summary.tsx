@@ -55,9 +55,7 @@ const Step5Summary: React.FC<Props> = ({
 }) => {
   const chronic = data.chronicDiseases || [];
   const familyHistory = data.familyHistory || [];
-  const medsLines = data.medicationName
-    ? data.medicationName.split("\n").filter((l) => l.trim().length > 0)
-    : [];
+  const medsLines = data.medications || [];
 
   const stressLabel = stressText[data.stressLevel] ?? "";
 
@@ -107,10 +105,10 @@ const Step5Summary: React.FC<Props> = ({
             {data.biologicalSex === "M"
               ? "Masculino"
               : data.biologicalSex === "F"
-              ? "Femenino"
-              : data.biologicalSex === "O"
-              ? "Otro"
-              : "-"}
+                ? "Femenino"
+                : data.biologicalSex === "O"
+                  ? "Otro"
+                  : "-"}
           </ItemValue>
         </ItemRow>
         <Divider />

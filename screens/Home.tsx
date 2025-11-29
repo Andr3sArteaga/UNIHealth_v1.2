@@ -125,7 +125,7 @@ const Home: React.FC = () => {
           <SectionHeaderRow>
             <SectionTitle>Próximas Citas</SectionTitle>
             <SeeAllRow>
-              <SeeAllText>Ver todas</SeeAllText>
+              <SeeAllText onPress={() => navigation.navigate("Citas")}>Ver todas</SeeAllText>
               <Ionicons
                 name="chevron-forward"
                 size={16}

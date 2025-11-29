@@ -1,15 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components/native";
 import { Theme } from "../colors";
 import { Ionicons } from "@expo/vector-icons";
 import { TouchableOpacity } from "react-native";
 
 export type Step2MedicalDataForm = {
-  chronicDiseases: string[];      
-  medicationName: string;         
-  allergies: string;              
-  surgeries: string;              
-  hasDisability: boolean;        
+  chronicDiseases: string[];
+  medications: string[];
+  allergies: string;
+  surgeries: string;
+  hasDisability: boolean;
 };
 
 type Props = {
@@ -30,6 +30,8 @@ const chronicOptions = [
 ];
 
 const Step2MedicalData: React.FC<Props> = ({ data, onChange, errors }) => {
+  const [currentMedication, setCurrentMedication] = useState("");
+
   const toggleChronic = (option: string) => {
     const exists = data.chronicDiseases.includes(option);
     const chronicDiseases = exists
@@ -37,6 +39,18 @@ const Step2MedicalData: React.FC<Props> = ({ data, onChange, errors }) => {
       : [...data.chronicDiseases, option];
 
     onChange({ chronicDiseases });
+  };
+
+  const addMedication = () => {
+    if (currentMedication.trim()) {
+      onChange({ medications: [...data.medications, currentMedication.trim()] });
+      setCurrentMedication("");
+    }
+  };
+
+  const removeMedication = (index: number) => {
+    const medications = data.medications.filter((_, i) => i !== index);
+    onChange({ medications });
   };
 
   const toggleDisability = () => {
@@ -72,7 +86,7 @@ const Step2MedicalData: React.FC<Props> = ({ data, onChange, errors }) => {
             );
           })}
         </ChipsGrid>
-            {errors?.chronicDiseases && <ErrorText>{errors.chronicDiseases}</ErrorText>}
+        {errors?.chronicDiseases && <ErrorText>{errors.chronicDiseases}</ErrorText>}
       </FieldGroup>
 
       {/* Medicamentos regulares */}
@@ -81,14 +95,31 @@ const Step2MedicalData: React.FC<Props> = ({ data, onChange, errors }) => {
         <MedicationRow>
           <MedicationInput
             placeholder="Nombre del medicamento"
-            value={data.medicationName}
-            onChangeText={(text) => onChange({ medicationName: text })}
+            value={currentMedication}
+            onChangeText={setCurrentMedication}
             placeholderTextColor={Theme.colors.textTertiary}
           />
-          <AddButton activeOpacity={0.8}>
+          <AddButton activeOpacity={0.8} onPress={addMedication}>
             <Ionicons name="add" size={22} color={Theme.colors.white} />
           </AddButton>
         </MedicationRow>
+
+        {/* Medication Pills */}
+        {data.medications.length > 0 && (
+          <MedicationPillsContainer>
+            {data.medications.map((med, index) => (
+              <MedicationPill key={index}>
+                <MedicationPillText>{med}</MedicationPillText>
+                <RemovePillButton
+                  activeOpacity={0.7}
+                  onPress={() => removeMedication(index)}
+                >
+                  <Ionicons name="close" size={16} color={Theme.colors.primary} />
+                </RemovePillButton>
+              </MedicationPill>
+            ))}
+          </MedicationPillsContainer>
+        )}
       </FieldGroup>
 
       {/* Alergias */}
@@ -191,7 +222,7 @@ const ChipsGrid = styled.View`
   gap: ${Theme.spacing.space2}px;
 `;
 
-const Chip = styled(TouchableOpacity)<{ $selected: boolean }>`
+const Chip = styled(TouchableOpacity) <{ $selected: boolean }>`
   padding-vertical: ${Theme.spacing.space3}px;
   padding-horizontal: ${Theme.spacing.space4}px;
   border-radius: 16px;
@@ -305,4 +336,38 @@ const ErrorText = styled.Text`
   margin-top: 6px;
   font-size: ${Theme.typography.fontSizeXs}px;
 `;
- 
+
+/* Medication Pills */
+
+const MedicationPillsContainer = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: ${Theme.spacing.space2}px;
+  margin-top: ${Theme.spacing.space3}px;
+`;
+
+const MedicationPill = styled.View`
+  flex-direction: row;
+  align-items: center;
+  background-color: #FDE7EE;
+  border-radius: 16px;
+  padding-vertical: ${Theme.spacing.space2}px;
+  padding-horizontal: ${Theme.spacing.space3}px;
+  border-width: 1px;
+  border-color: ${Theme.colors.primary};
+`;
+
+const MedicationPillText = styled.Text`
+  font-size: ${Theme.typography.fontSizeSm}px;
+  color: ${Theme.colors.primary};
+  margin-right: ${Theme.spacing.space2}px;
+`;
+
+const RemovePillButton = styled(TouchableOpacity)`
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: ${Theme.colors.white};
+  justify-content: center;
+  align-items: center;
+`;
