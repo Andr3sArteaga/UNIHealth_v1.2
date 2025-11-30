@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Theme } from "../components/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import api from "../api/api";
 
 const Header = styled.View`
   flex-direction: row;
@@ -375,6 +376,7 @@ const ConsultationType = styled.Text`
   color: ${Theme.colors.textPrimary};
 `;
 
+
 const ConsultationDate = styled.Text`
   font-size: ${Theme.typography.fontSizeXs}px;
   color: ${Theme.colors.textSecondary};
@@ -392,21 +394,68 @@ const ConsultationFieldValue = styled.Text`
 `;
 
 const ConsultationNotes = styled.Text`
-  margin-top: ${Theme.spacing.space1}px;
   font-size: ${Theme.typography.fontSizeSm}px;
-  color: ${Theme.colors.textPrimary};
-  background-color: ${Theme.colors.backgroundAlt};
-  padding: ${Theme.spacing.space2}px;
-  border-radius: 12px;
+  color: ${Theme.colors.textSecondary};
+  font-style: italic;
+  margin-top: 4px;
 `;
 
-const MedicalHistory: React.FC = () => {
+const MedicalHistory = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+
   const [isLocked, setIsLocked] = useState(true);
   const [code, setCode] = useState(["", "", "", ""]);
   const [isCodeVisible, setIsCodeVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
+
+  // Data state
+  const [loading, setLoading] = useState(true);
+  const [patientName, setPatientName] = useState("Cargando...");
+  const [patientAge, setPatientAge] = useState("");
+  const [conditions, setConditions] = useState<any[]>([]);
+  const [allergies, setAllergies] = useState<any[]>([]);
+  const [medications, setMedications] = useState<any[]>([]);
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // 1. Get User Profile to know ID and Name
+      const profileRes = await api.get('/user/profile');
+      const userData = profileRes.data;
+      const patientId = userData.id;
+
+      if (userData.patientProfile) {
+        setPatientName(`${userData.patientProfile.firstName} ${userData.patientProfile.lastName} `);
+        // Calculate age if DOB exists
+        if (userData.patientProfile.dob) {
+          const dob = new Date(userData.patientProfile.dob);
+          const ageDifMs = Date.now() - dob.getTime();
+          const ageDate = new Date(ageDifMs);
+          setPatientAge(`${Math.abs(ageDate.getUTCFullYear() - 1970)} años`);
+        }
+      }
+
+      // 2. Get Full Medical History
+      const historyRes = await api.get(`/medical-history/full/${patientId}`);
+      const data = historyRes.data;
+
+      // Filter conditions (fisico)
+      const physicalConditions = (data.history || []).filter((h: any) => h.type === 'fisico');
+      setConditions(physicalConditions);
+
+      setAllergies(data.allergies || []);
+      setMedications(data.medications || []);
+
+    } catch (error) {
+      console.error("Error fetching medical history:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCodeChange = (text: string) => {
     // Limitar a números
@@ -574,8 +623,8 @@ const MedicalHistory: React.FC = () => {
             <PatientCard>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 <View>
-                  <PatientName>Ana García López</PatientName>
-                  <PatientSubtitle>24 años • O+</PatientSubtitle>
+                  <PatientName>{patientName}</PatientName>
+                  <PatientSubtitle>{patientAge} • O+</PatientSubtitle>
                 </View>
                 <TouchableOpacity onPress={() => setIsLocked(true)}>
                   <Ionicons
@@ -590,12 +639,17 @@ const MedicalHistory: React.FC = () => {
                 <PatientColumn>
                   <PatientSectionLabel>Condiciones</PatientSectionLabel>
                   <ChipsRow>
-                    <ConditionChip>
-                      <ConditionText>Asma Leve</ConditionText>
-                    </ConditionChip>
-                    <ConditionChip>
-                      <ConditionText>Miopía</ConditionText>
-                    </ConditionChip>
+                    {conditions.length > 0 ? (
+                      conditions.map((cond, i) => (
+                        <ConditionChip key={i}>
+                          <ConditionText>{cond.condition}</ConditionText>
+                        </ConditionChip>
+                      ))
+                    ) : (
+                      <Text style={{ color: Theme.colors.textSecondary, fontSize: 12 }}>
+                        Ninguna registrada
+                      </Text>
+                    )}
                   </ChipsRow>
                 </PatientColumn>
               </PatientRow>
@@ -604,24 +658,23 @@ const MedicalHistory: React.FC = () => {
                 <PatientColumn>
                   <PatientSectionLabel>Alergias</PatientSectionLabel>
                   <ChipsRow>
-                    <AllergyChip>
-                      <Ionicons
-                        name="alert-circle"
-                        size={14}
-                        color={Theme.colors.warning}
-                        style={{ marginRight: 4 }}
-                      />
-                      <AllergyText>Penicilina</AllergyText>
-                    </AllergyChip>
-                    <AllergyChip>
-                      <Ionicons
-                        name="alert-circle"
-                        size={14}
-                        color={Theme.colors.warning}
-                        style={{ marginRight: 4 }}
-                      />
-                      <AllergyText>Polen</AllergyText>
-                    </AllergyChip>
+                    {allergies.length > 0 ? (
+                      allergies.map((alg, i) => (
+                        <AllergyChip key={i}>
+                          <Ionicons
+                            name="alert-circle"
+                            size={14}
+                            color={Theme.colors.warning}
+                            style={{ marginRight: 4 }}
+                          />
+                          <AllergyText>{alg.allergen}</AllergyText>
+                        </AllergyChip>
+                      ))
+                    ) : (
+                      <Text style={{ color: Theme.colors.textSecondary, fontSize: 12 }}>
+                        Ninguna registrada
+                      </Text>
+                    )}
                   </ChipsRow>
                 </PatientColumn>
               </PatientRow>
@@ -632,12 +685,17 @@ const MedicalHistory: React.FC = () => {
                 <PatientColumn>
                   <PatientSectionLabel>Medicamentos Activos</PatientSectionLabel>
                   <View style={{ marginTop: 4 }}>
-                    <Text style={{ fontSize: 14, color: Theme.colors.textPrimary, marginBottom: 4 }}>
-                      • Salbutamol (Inhalador) - Si es necesario
-                    </Text>
-                    <Text style={{ fontSize: 14, color: Theme.colors.textPrimary }}>
-                      • Loratadina - 10mg diarios
-                    </Text>
+                    {medications.length > 0 ? (
+                      medications.map((med, i) => (
+                        <Text key={i} style={{ fontSize: 14, color: Theme.colors.textPrimary, marginBottom: 4 }}>
+                          • {med.name} {med.dosage ? `- ${med.dosage} ` : ''}
+                        </Text>
+                      ))
+                    ) : (
+                      <Text style={{ fontSize: 14, color: Theme.colors.textSecondary }}>
+                        Ningún medicamento activo
+                      </Text>
+                    )}
                   </View>
                 </PatientColumn>
               </PatientRow>
@@ -683,7 +741,7 @@ const MedicalHistory: React.FC = () => {
           </View>
         )}
       </ScrollView>
-    </View>
+    </View >
   );
 };
 
